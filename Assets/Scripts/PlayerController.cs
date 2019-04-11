@@ -22,11 +22,12 @@ public class PlayerController : Agent
     public Transform pinky;
     public Transform clyde;
 
-    Hashtable graph;
-    public float inkyDistance = 10;
-    public float blinkyDistance = 10;
-    public float pinkyDistance = 10;
-    public float clydeDistance = 10;
+    Dictionary<String, GraphNode> new_graph;
+
+    public float inkyDistance = 9999;
+    public float blinkyDistance = 9999;
+    public float pinkyDistance = 9999;
+    public float clydeDistance = 9999;
 
     [Serializable]
     public class PointSprites
@@ -66,7 +67,7 @@ public class PlayerController : Agent
 
     private void initializeGraph()
     {
-        this.graph = new Hashtable();
+        new_graph = new Dictionary<String, GraphNode>();
 
         GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
         System.Diagnostics.Debug.Print(currentPacdots.Length+"");
@@ -75,16 +76,18 @@ public class PlayerController : Agent
         {
             int x = (int)pacdot.transform.position.x;
             int y = (int)pacdot.transform.position.y;
-            if (!graph.ContainsKey(x + "," + y))
+
+            if (!new_graph.ContainsKey(x + "," + y))
             {
-                graph.Add(x+","+y, new GraphNode(x, y));
+                new_graph.Add(x+","+y, new GraphNode(x, y));
             }
             //System.Diagnostics.Debug.Print(x+","+y);
         }
-        graph.Add(15+","+11, new GraphNode(15, 11));
-        graph.Add(14+","+11, new GraphNode(14, 11));
 
-        System.Diagnostics.Debug.Print(graph.Count+"");
+        new_graph.Add(15+","+11, new GraphNode(15, 11));
+        new_graph.Add(14+","+11, new GraphNode(14, 11));
+
+        System.Diagnostics.Debug.Print(new_graph.Count+"");
 
         int[,] graph2 = new int[30, 33];
         for (int i = 0; i < graph2.GetLength(0); i++)
@@ -112,22 +115,22 @@ public class PlayerController : Agent
                 {
                     String key = i+","+j;
 
-                    GraphNode node = (GraphNode)graph[key];
+                    GraphNode node = new_graph[key];
                     if (graph2[i + 1, j] == 1)
                     {
-                        node.addEdge((GraphNode)graph[(i + 1) + "," + j]);
+                        node.adjacent.Add(new_graph[(i + 1) + "," + j]);
                     }
                     if (graph2[i, j+1] == 1)
                     {
-                        node.addEdge((GraphNode)graph[(i ) + "," + (j+1)]);
+                        node.adjacent.Add(new_graph[(i ) + "," + (j+1)]);
                     }
                     if (graph2[i - 1, j] == 1)
                     {
-                        node.addEdge((GraphNode)graph[(i - 1) + "," + j]);
+                        node.adjacent.Add(new_graph[(i - 1) + "," + j]);
                     }
                     if (graph2[i , j-1] == 1)
                     {
-                        node.addEdge((GraphNode)graph[(i ) + "," + (j-1)]);
+                        node.adjacent.Add(new_graph[(i ) + "," + (j-1)]);
                     }
                 
                 }
@@ -166,15 +169,27 @@ public class PlayerController : Agent
     // Update is called once per frame
     void FixedUpdate()
     {
+        blinkyDistance = new_graph.ContainsKey((int)blinky.transform.position.x + "," + (int)blinky.transform.position.y)
+            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)blinky.transform.position.x + "," + (int)blinky.transform.position.y])
+            : 9999;
 
-        //blinkyDistance = PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)blinky.transform.position.x + "," + (int)blinky.transform.position.y]);
-        //inkyDistance = PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)inky.transform.position.x + "," + (int)inky.transform.position.y]);
-        //pinkyDistance = PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)pinky.transform.position.x + "," + (int)pinky.transform.position.y]);
-        //clydeDistance = PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y]);
-        inkyDistance = (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, inky.position.x, inky.position.y));
-        blinkyDistance =   (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, blinky.position.x, blinky.position.y));
-        pinkyDistance =  (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, pinky.position.x, pinky.position.y));
-        clydeDistance = (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, clyde.position.x, clyde.position.y));
+        inkyDistance = new_graph.ContainsKey((int)inky.transform.position.x + "," + (int)inky.transform.position.y)
+            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)inky.transform.position.x + "," + (int)inky.transform.position.y])
+            : 9999;
+
+        pinkyDistance = new_graph.ContainsKey((int)pinky.transform.position.x + "," + (int)pinky.transform.position.y)
+            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)pinky.transform.position.x + "," + (int)pinky.transform.position.y])
+            : 9999;
+
+        clydeDistance = new_graph.ContainsKey((int)clyde.transform.position.x + "," + (int)clyde.transform.position.y)
+            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y])
+            : 9999;
+
+
+        //inkyDistance = (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, inky.position.x, inky.position.y));
+        //blinkyDistance =   (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, blinky.position.x, blinky.position.y));
+        //pinkyDistance =  (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, pinky.position.x, pinky.position.y));
+        //clydeDistance = (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, clyde.position.x, clyde.position.y));
 
         switch (GameManager.gameState)
         {
@@ -402,10 +417,6 @@ public class PlayerController : Agent
     public override void CollectObservations()
     {
         //AddVectorObs(float);
-        //System.Diagnostics.Debug.WriteLine(PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)blinky.transform.position.x + "," + (int)blinky.transform.position.y]));
-        //System.Diagnostics.Debug.WriteLine(PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)inky.transform.position.x + "," + (int)inky.transform.position.y]));
-        //System.Diagnostics.Debug.WriteLine(PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)pinky.transform.position.x + "," + (int)pinky.transform.position.y]));
-        //System.Diagnostics.Debug.WriteLine(PathFinder.findWeight((GraphNode)graph[(int)transform.position.x + "," + (int)transform.position.y], (GraphNode)graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y]));
         //return null
         AddVectorObs(gameObject.transform.position.x);
         AddVectorObs(gameObject.transform.position.y);

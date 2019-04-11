@@ -5,8 +5,13 @@ public class PathFinder
 {
     public static int findWeight(GraphNode src, GraphNode dest)
     {
+
+        if (src == null || dest == null)
+        {
+            return 9999;
+        }
         HashSet<GraphNode> visited  = new HashSet<GraphNode>();
-        Queue<GraphNode> queue  = new Queue<GraphNode>();
+        Queue<GraphNode> queue = new Queue<GraphNode>();
         queue.Enqueue(src);
         visited.Add(src);
         src.prev = null;

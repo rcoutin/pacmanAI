@@ -24,10 +24,12 @@ public class PlayerController : Agent
 
     Dictionary<String, GraphNode> new_graph;
 
-    public float inkyDistance = 9999;
-    public float blinkyDistance = 9999;
-    public float pinkyDistance = 9999;
-    public float clydeDistance = 9999;
+    private float inkyDistance = 9999;
+    private float blinkyDistance = 9999;
+    private float pinkyDistance = 9999;
+    private float clydeDistance = 9999;
+    private float nearestPacdot = 9999;
+    
 
     [Serializable]
     public class PointSprites
@@ -169,21 +171,23 @@ public class PlayerController : Agent
     // Update is called once per frame
     void FixedUpdate()
     {
-        blinkyDistance = new_graph.ContainsKey((int)blinky.transform.position.x + "," + (int)blinky.transform.position.y)
+        blinkyDistance = new_graph.ContainsKey((int)blinky.transform.position.x + "," + (int)blinky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
             ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)blinky.transform.position.x + "," + (int)blinky.transform.position.y])
             : 9999;
 
-        inkyDistance = new_graph.ContainsKey((int)inky.transform.position.x + "," + (int)inky.transform.position.y)
+        inkyDistance = new_graph.ContainsKey((int)inky.transform.position.x + "," + (int)inky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
             ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)inky.transform.position.x + "," + (int)inky.transform.position.y])
             : 9999;
 
-        pinkyDistance = new_graph.ContainsKey((int)pinky.transform.position.x + "," + (int)pinky.transform.position.y)
+        pinkyDistance = new_graph.ContainsKey((int)pinky.transform.position.x + "," + (int)pinky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
             ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)pinky.transform.position.x + "," + (int)pinky.transform.position.y])
             : 9999;
 
-        clydeDistance = new_graph.ContainsKey((int)clyde.transform.position.x + "," + (int)clyde.transform.position.y)
+        clydeDistance = new_graph.ContainsKey((int)clyde.transform.position.x + "," + (int)clyde.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
             ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y])
             : 9999;
+
+        
 
 
         //inkyDistance = (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, inky.position.x, inky.position.y));
@@ -204,6 +208,29 @@ public class PlayerController : Agent
                 break;
         }
 
+    }
+
+    private float findNearestPacdot()
+    {
+        float minDist = 9999;
+        GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
+        foreach (GameObject pacdot in currentPacdots)
+        {
+            if (pacdot == null) continue;
+
+            int x = (int)pacdot.transform.position.x;
+            int y = (int)pacdot.transform.position.y;
+
+            minDist = Math.Min(minDist, PathFinder.findWeight(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]));
+
+            //if(new_graph.ContainsKey(x + "," + y))
+            //{
+            //    new_graph.Add(x + "," + y, new GraphNode(x, y));
+            //}
+            //System.Diagnostics.Debug.Print(x+","+y);
+        }
+        //System.Diagnostics.Debug.WriteLine("MinDist "+minDist);
+        return minDist;
     }
 
     IEnumerator PlayDeadAnimation()
@@ -287,6 +314,8 @@ public class PlayerController : Agent
             {
                 _dest = (Vector2)transform.position + _nextDir;
                 _dir = _nextDir;
+                nearestPacdot = findNearestPacdot();
+                System.Diagnostics.Debug.WriteLine(nearestPacdot);
             }
             else   // if next direction is not valid
             {
@@ -350,50 +379,50 @@ public class PlayerController : Agent
         }
     }
 
-    private void fleeFromClosestGhost()
-    {
-        Transform ghost = closestGhost();
-        if (ghost == null)
-        {
-            return;
-        }
-        _nextDir.x = ghost.GetComponent<AI>().ghost._direction.x;
-        _nextDir.y = ghost.GetComponent<AI>().ghost._direction.y;
-    }
+    //private void fleeFromClosestGhost()
+    //{
+    //    Transform ghost = closestGhost();
+    //    if (ghost == null)
+    //    {
+    //        return;
+    //    }
+    //    _nextDir.x = ghost.GetComponent<AI>().ghost._direction.x;
+    //    _nextDir.y = ghost.GetComponent<AI>().ghost._direction.y;
+    //}
 
-    private Transform closestGhost()
-    {
-        Transform temp = null;
-        float distance = 100000000;
-        if (Vector2.Distance(inky.position, transform.position) < distance)
-        {
-            distance = Vector2.Distance(inky.position, transform.position);
-            temp = inky;
-        }
-        if (Vector2.Distance(blinky.position, transform.position) < distance)
-        {
-            distance = Vector2.Distance(blinky.position, transform.position);
-            temp = blinky;
-        }
-        if (Vector2.Distance(pinky.position, transform.position) < distance)
-        {
-            distance = Vector2.Distance(pinky.position, transform.position);
-            temp = pinky;
-        }
-        if (Vector2.Distance(clyde.position, transform.position) < distance)
-        {
-            distance = Vector2.Distance(clyde.position, transform.position);
-            temp = clyde;
-        }
-        if (distance < 10)
-        {
-            return temp;
-        }
-        else
-        {
-            return null;
-        }
-    }
+    //private Transform closestGhost()
+    //{
+    //    Transform temp = null;
+    //    float distance = 100000000;
+    //    if (Vector2.Distance(inky.position, transform.position) < distance)
+    //    {
+    //        distance = Vector2.Distance(inky.position, transform.position);
+    //        temp = inky;
+    //    }
+    //    if (Vector2.Distance(blinky.position, transform.position) < distance)
+    //    {
+    //        distance = Vector2.Distance(blinky.position, transform.position);
+    //        temp = blinky;
+    //    }
+    //    if (Vector2.Distance(pinky.position, transform.position) < distance)
+    //    {
+    //        distance = Vector2.Distance(pinky.position, transform.position);
+    //        temp = pinky;
+    //    }
+    //    if (Vector2.Distance(clyde.position, transform.position) < distance)
+    //    {
+    //        distance = Vector2.Distance(clyde.position, transform.position);
+    //        temp = clyde;
+    //    }
+    //    if (distance < 10)
+    //    {
+    //        return temp;
+    //    }
+    //    else
+    //    {
+    //        return null;
+    //    }
+    //}
 
 
 
@@ -416,6 +445,7 @@ public class PlayerController : Agent
 
     public override void CollectObservations()
     {
+        //System.Diagnostics.Debug.WriteLine(blinkyDistance);
         //AddVectorObs(float);
         //return null
         AddVectorObs(gameObject.transform.position.x);
@@ -442,14 +472,21 @@ public class PlayerController : Agent
         //GameGUINavigation gui = GameObject.FindObjectOfType<GameGUINavigation>();
         //gui.H_ShowReadyScreen();
 
-        System.Diagnostics.Debug.WriteLine("Agent Reset");
+        //System.Diagnostics.Debug.WriteLine("Agent Reset");
     }
 
     public override void AgentOnDone()
     {
-        System.Diagnostics.Debug.WriteLine("Agent Done");
+        //System.Diagnostics.Debug.WriteLine("Agent Done");
         base.AgentOnDone();
         
+    }
+
+    void OnTriggerEnter2D(Collider2D other) {
+        if (other.name == "Walls"){
+            _nextDir = -_nextDir;
+        }
+
     }
 
     public override void AgentAction(float[] action, String textAction)
@@ -461,6 +498,11 @@ public class PlayerController : Agent
         if (action[1] == 1) _nextDir = Vector2.up;
         if (action[1] == 2) _nextDir = -Vector2.up;
 
+        // Collision Avoidance
+        //If(this collides with gameobject.tag(wall))
+        //Then
+        //Changedirection()
+        
         //AddReward(float);
         if (GameManager.gameState == GameManager.GameState.Dead)
         {
@@ -470,7 +512,7 @@ public class PlayerController : Agent
         {
             float currentReward = 0.07f;
             int difference = currentScore - score;
-            float posDifference = euclideanDistance(transform.position.x, transform.position.y, temp.position.x, temp.position.y);
+            //float posDifference = euclideanDistance(transform.position.x, transform.position.y, temp.position.x, temp.position.y);
             switch (difference)
             {
                 case 10:
@@ -498,9 +540,9 @@ public class PlayerController : Agent
                 currentReward += (distance - 7) / 20;
             }
 
-            if (posDifference < 1) {
-                AddReward(-0.05f);
-            }
+            //if (posDifference < 1) {
+            //    AddReward(-0.05f);
+            //}
 
             AddReward(currentReward);
         }

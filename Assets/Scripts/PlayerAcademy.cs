@@ -56,7 +56,7 @@ public class PlayerAcademy : Academy
 
 
 
-        System.Diagnostics.Debug.WriteLine("AcademyReset");
+        //System.Diagnostics.Debug.WriteLine("AcademyReset");
     }
 
     public override void InitializeAcademy()
@@ -66,10 +66,10 @@ public class PlayerAcademy : Academy
 
     public override void AcademyStep()
     {
-        System.Diagnostics.Debug.WriteLine("AcademyStep");
+        //System.Diagnostics.Debug.WriteLine("AcademyStep");
         if (GameManager.lives <= 0)
         {
-            System.Diagnostics.Debug.WriteLine("AcademyStep Done");
+            //System.Diagnostics.Debug.WriteLine("AcademyStep Done");
             Done();
             destroyThis = GameObject.Find("mazeobject");
             if(!destroyThis) destroyThis = GameObject.Find("mazeobject(Clone)");

@@ -135,10 +135,10 @@ public class GameManager : MonoBehaviour {
 	public void ScareGhosts()
 	{
 		scared = true;
-		blinky.GetComponent<GhostMove>().Frighten();
-		pinky.GetComponent<GhostMove>().Frighten();
-		inky.GetComponent<GhostMove>().Frighten();
-		clyde.GetComponent<GhostMove>().Frighten();
+		blinky?.GetComponent<GhostMove>().Frighten();
+		pinky?.GetComponent<GhostMove>().Frighten();
+		inky?.GetComponent<GhostMove>().Frighten();
+		clyde?.GetComponent<GhostMove>().Frighten();
 		_timeToCalm = Time.time + scareLength;
 
         Debug.Log("Ghosts Scared");
@@ -147,10 +147,10 @@ public class GameManager : MonoBehaviour {
 	public void CalmGhosts()
 	{
 		scared = false;
-		blinky.GetComponent<GhostMove>().Calm();
-		pinky.GetComponent<GhostMove>().Calm();
-		inky.GetComponent<GhostMove>().Calm();
-		clyde.GetComponent<GhostMove>().Calm();
+		blinky?.GetComponent<GhostMove>().Calm();
+		pinky?.GetComponent<GhostMove>().Calm();
+		inky?.GetComponent<GhostMove>().Calm();
+		clyde?.GetComponent<GhostMove>().Calm();
 	    PlayerController.killstreak = 0;
     }
 

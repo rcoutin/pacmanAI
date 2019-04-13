@@ -264,8 +264,8 @@ public class PlayerController : Agent
             {
                 _dest = (Vector2)transform.position + _nextDir;
                 _dir = _nextDir;
-                nearestPacdot = findNearestPacdot();
-                System.Diagnostics.Debug.WriteLine(nearestPacdot);
+                //nearestPacdot = findNearestPacdot();
+                //System.Diagnostics.Debug.WriteLine(nearestPacdot);
             }
             else   // if next direction is not valid
             {
@@ -277,33 +277,35 @@ public class PlayerController : Agent
         }
     }
 
-    bool IsColliderNearby(Vector2 direction)
-    {
-        // cast line from 'next to pacman' to pacman
-        // not from directly the center of next tile but just a little further from center of next tile
-        Vector2 pos = transform.position;
-        direction += new Vector2(direction.x * 0.45f, direction.y * 0.45f);
-        RaycastHit2D hit = Physics2D.Linecast(pos + direction, pos);
-        PrintLog(hit.collider.name + " " + hit.point + " " + hit.distance);
-        return hit.collider.name == "maze";
-    }
+    //bool IsColliderNearby(Vector2 direction, Color color)
+    //{
+    //    // cast line from 'next to pacman' to pacman
+    //    // not from directly the center of next tile but just a little further from center of next tile
+    //    Vector2 pos = transform.position;
+    //    direction += new Vector2(direction.x * 0.45f, direction.y * 0.45f);
+    //    RaycastHit2D hit = Physics2D.Linecast(pos + direction, pos);
+    //    PrintLog(hit.collider.name + " " + hit.point + " " + hit.distance);
+    //    //UnityEngine.Debug.DrawRay(transform.position, direction * 5, color, 1000000, false);
+    //    return hit.collider.name == "maze";
+    //}
 
     void PrintLog(System.Object s)
     {
         System.Diagnostics.Debug.WriteLine(s);
 
     }
-    void CheckSurroundingWalls()
-    {
-        PrintLog("Pacman direction" + _dir);
-        PrintLog("Start - Checking walls");
-        if (IsColliderNearby(Vector2.right)) PrintLog("can't move right");
-        if (IsColliderNearby(-Vector2.right)) PrintLog("can't move left");
-        if (IsColliderNearby(Vector2.up)) PrintLog("Can't move up");
-        if (IsColliderNearby(-Vector2.up)) PrintLog("Can't move down");
-        UnityEngine.Debug.DrawRay(transform.position, new Vector3(1, 1, 0) * 5, Color.green, 1000000, false);
-        PrintLog("Done - checking walls");
-    }
+
+    //void CheckSurroundingWalls()
+    //{
+    //    //PrintLog("Pacman direction" + _dir);
+    //    //PrintLog("Start - Checking walls");
+    //    //if (IsColliderNearby(Vector2.right, Color.green)) PrintLog("can't move right");
+    //    //if (IsColliderNearby(-Vector2.right, Color.red)) PrintLog("can't move left");
+    //    //if (IsColliderNearby(Vector2.up, Color.blue)) PrintLog("Can't move up");
+    //    //if (IsColliderNearby(-Vector2.up, Color.yellow)) PrintLog("Can't move down");
+        
+    //    //PrintLog("Done - checking walls");
+    //}
 
     private void validateAndChangeDir()
     {
@@ -344,9 +346,16 @@ public class PlayerController : Agent
 
     public override void CollectObservations()
     {
-        //System.Diagnostics.Debug.WriteLine(blinkyDistance);
-        //AddVectorObs(float);
-        //return null
+        int size = 0;
+        Boolean cantGoLeft = !Valid(Vector2.left), cantGoRight = !Valid(Vector2.right);
+        size += cantGoLeft ? 1:0; size += cantGoRight ? 1:0;
+        if (size > 0) SetActionMask(0, size == 2 ? new int[] { 1, 2 } : new int[] { cantGoLeft ? 1 : 2 });
+
+        size = 0;
+        Boolean cantGoUp = !Valid(Vector2.up), cantGoDown = !Valid(Vector2.down);
+        size += cantGoUp ? 1 : 0; size += cantGoDown ? 1 : 0;
+        if (size > 0) SetActionMask(1, size == 2 ? new int[] { 1, 2 }: new int[] { cantGoUp ? 1 : 2 });
+
         AddVectorObs(gameObject.transform.position.x);
         AddVectorObs(gameObject.transform.position.y);
         AddVectorObs(_dir.x);
@@ -438,7 +447,10 @@ public class PlayerController : Agent
 
             foreach (float distance in ghostDistances)
             {
-                currentReward += (distance - 7) / 20;
+                if (distance < 1000)
+                {                    
+                    currentReward += (distance - 7) / 20;
+                }
             }
 
             //if (posDifference < 1) {

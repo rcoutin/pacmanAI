@@ -29,7 +29,7 @@ public class PlayerController : Agent
     private float pinkyDistance = 9999;
     private float clydeDistance = 9999;
     private float nearestPacdot = 9999;
-    
+
 
     [Serializable]
     public class PointSprites
@@ -61,7 +61,8 @@ public class PlayerController : Agent
         {
             initializeGraph();
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             System.Diagnostics.Debug.Print(e.Message);
             System.Diagnostics.Debug.Print(e.StackTrace);
         }
@@ -72,7 +73,7 @@ public class PlayerController : Agent
         new_graph = new Dictionary<String, GraphNode>();
 
         GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
-        System.Diagnostics.Debug.Print(currentPacdots.Length+"");
+        System.Diagnostics.Debug.Print(currentPacdots.Length + "");
 
         foreach (GameObject pacdot in currentPacdots)
         {
@@ -81,15 +82,15 @@ public class PlayerController : Agent
 
             if (!new_graph.ContainsKey(x + "," + y))
             {
-                new_graph.Add(x+","+y, new GraphNode(x, y));
+                new_graph.Add(x + "," + y, new GraphNode(x, y));
             }
             //System.Diagnostics.Debug.Print(x+","+y);
         }
 
-        new_graph.Add(15+","+11, new GraphNode(15, 11));
-        new_graph.Add(14+","+11, new GraphNode(14, 11));
+        new_graph.Add(15 + "," + 11, new GraphNode(15, 11));
+        new_graph.Add(14 + "," + 11, new GraphNode(14, 11));
 
-        System.Diagnostics.Debug.Print(new_graph.Count+"");
+        System.Diagnostics.Debug.Print(new_graph.Count + "");
 
         int[,] graph2 = new int[30, 33];
         for (int i = 0; i < graph2.GetLength(0); i++)
@@ -101,7 +102,7 @@ public class PlayerController : Agent
         }
         graph2[15, 11] = 1;
         graph2[14, 11] = 1;
-        
+
         foreach (GameObject pacdot in currentPacdots)
         {
             int i = (int)pacdot.transform.position.x;
@@ -109,64 +110,36 @@ public class PlayerController : Agent
             graph2[i, j] = 1;
         }
 
-        for (int i = 1; i < graph2.GetLength(0)-1; i++)
+        for (int i = 1; i < graph2.GetLength(0) - 1; i++)
         {
-            for (int j = 1; j < graph2.GetLength(1)-1; j++)
+            for (int j = 1; j < graph2.GetLength(1) - 1; j++)
             {
-                if (graph2[i,j] == 1)
+                if (graph2[i, j] == 1)
                 {
-                    String key = i+","+j;
+                    String key = i + "," + j;
 
                     GraphNode node = new_graph[key];
                     if (graph2[i + 1, j] == 1)
                     {
                         node.adjacent.Add(new_graph[(i + 1) + "," + j]);
                     }
-                    if (graph2[i, j+1] == 1)
+                    if (graph2[i, j + 1] == 1)
                     {
-                        node.adjacent.Add(new_graph[(i ) + "," + (j+1)]);
+                        node.adjacent.Add(new_graph[(i) + "," + (j + 1)]);
                     }
                     if (graph2[i - 1, j] == 1)
                     {
                         node.adjacent.Add(new_graph[(i - 1) + "," + j]);
                     }
-                    if (graph2[i , j-1] == 1)
+                    if (graph2[i, j - 1] == 1)
                     {
-                        node.adjacent.Add(new_graph[(i ) + "," + (j-1)]);
+                        node.adjacent.Add(new_graph[(i) + "," + (j - 1)]);
                     }
-                
+
                 }
             }
         }
     }
-
-    //private void initializeGraph()
-    //{
-    //    int[,] graph = new int[30, 33];
-    //    for (int i = 0; i < graph.GetLength(0); i++)
-    //    {
-    //        for (int j = 0; j < graph.GetLength(1); j++)
-    //        {
-    //            graph[i, j] = -1;
-    //        }
-    //    }
-
-    //    GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
-    //    foreach (GameObject pacdot in currentPacdots)
-    //    {
-    //        int i = (int)pacdot.transform.position.x;
-    //        int j = (int)pacdot.transform.position.y;
-    //        graph[i, j] = 1;
-    //    }
-    //    //for (int i = 0; i < graph.GetLength(0); i++)
-    //    //{
-    //    //    for (int j = 0; j < graph.GetLength(1); j++)
-    //    //    {
-    //    //        System.Diagnostics.Debug.Write(graph[i, j] + "");
-    //    //    }
-    //    //    System.Diagnostics.Debug.WriteLine("");
-    //    //}
-    //}
 
     // Update is called once per frame
     void FixedUpdate()
@@ -187,13 +160,6 @@ public class PlayerController : Agent
             ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y])
             : 9999;
 
-        
-
-
-        //inkyDistance = (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, inky.position.x, inky.position.y));
-        //blinkyDistance =   (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, blinky.position.x, blinky.position.y));
-        //pinkyDistance =  (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, pinky.position.x, pinky.position.y));
-        //clydeDistance = (euclideanDistance(gameObject.transform.position.x, gameObject.transform.position.y, clyde.position.x, clyde.position.y));
 
         switch (GameManager.gameState)
         {
@@ -244,27 +210,11 @@ public class PlayerController : Agent
 
         if (GameManager.lives <= 0)
         {
-            //UnityEngine.Debug.Log("Sup1");
             UnityEngine.Debug.Log("Treshold for High Score: " + SM.LowestHigh());
-            //int scene = SceneManager.GetActiveScene().buildIndex;
-            //SceneManager.LoadScene(scene, LoadSceneMode.Single);
             if (GameManager.score >= SM.LowestHigh())
                 GUINav.getScoresMenu();
             else
                 GUINav.H_ShowGameOverScreen();
-
-
-            //Application.LoadLevel("game");
-            //GM.ResetScene();
-
-            //UnityEngine.Debug.Log("Sup2");
-            //FindObjectOfType<Academy>().Done();
-
-            //Start();
-            //GameGUINavigation gui = GameObject.FindObjectOfType<GameGUINavigation>();
-            //gui.H_ShowReadyScreen();
-            //GameManager.gameState = GameManager.GameState.Game;
-            //UnityEngine.Debug.Log("Sup3");
         }
 
         else
@@ -327,36 +277,32 @@ public class PlayerController : Agent
         }
     }
 
-    //void ReadInputAndMove()
-    //{
-    //    // move closer to destination
-    //    Vector2 p = Vector2.MoveTowards(transform.position, _dest, speed);
-    //    GetComponent<Rigidbody2D>().MovePosition(p);
-
-    //    // _nextDir = Some direction based on Algorithm
-
-    //    //System.Diagnostics.Debug.WriteLine("Inky " + inky.GetComponent<AI>().ghost._direction);
-    //    //System.Diagnostics.Debug.WriteLine("Inky " + inky.position);
-
-    //    // Food finding
-    //    findFoodToConsume();
-
-    //    // Ghost fleeing
-    //    _nextDir = Vector2.right;
-    //    fleeFromClosestGhost();
-
-    //    // 4 components
-
-    //    // Prioritizing between food finding and ghost fleeing
-
-
-    //    validateAndChangeDir();
-    //}
-
-    private void findFoodToConsume()
+    bool IsColliderNearby(Vector2 direction)
     {
-        GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
-        //System.Diagnostics.Debug.WriteLine(currentPacdots[0].transform.position);
+        // cast line from 'next to pacman' to pacman
+        // not from directly the center of next tile but just a little further from center of next tile
+        Vector2 pos = transform.position;
+        direction += new Vector2(direction.x * 0.45f, direction.y * 0.45f);
+        RaycastHit2D hit = Physics2D.Linecast(pos + direction, pos);
+        PrintLog(hit.collider.name + " " + hit.point + " " + hit.distance);
+        return hit.collider.name == "maze";
+    }
+
+    void PrintLog(System.Object s)
+    {
+        System.Diagnostics.Debug.WriteLine(s);
+
+    }
+    void CheckSurroundingWalls()
+    {
+        PrintLog("Pacman direction" + _dir);
+        PrintLog("Start - Checking walls");
+        if (IsColliderNearby(Vector2.right)) PrintLog("can't move right");
+        if (IsColliderNearby(-Vector2.right)) PrintLog("can't move left");
+        if (IsColliderNearby(Vector2.up)) PrintLog("Can't move up");
+        if (IsColliderNearby(-Vector2.up)) PrintLog("Can't move down");
+        UnityEngine.Debug.DrawRay(transform.position, new Vector3(1, 1, 0) * 5, Color.green, 1000000, false);
+        PrintLog("Done - checking walls");
     }
 
     private void validateAndChangeDir()
@@ -378,53 +324,6 @@ public class PlayerController : Agent
             }
         }
     }
-
-    //private void fleeFromClosestGhost()
-    //{
-    //    Transform ghost = closestGhost();
-    //    if (ghost == null)
-    //    {
-    //        return;
-    //    }
-    //    _nextDir.x = ghost.GetComponent<AI>().ghost._direction.x;
-    //    _nextDir.y = ghost.GetComponent<AI>().ghost._direction.y;
-    //}
-
-    //private Transform closestGhost()
-    //{
-    //    Transform temp = null;
-    //    float distance = 100000000;
-    //    if (Vector2.Distance(inky.position, transform.position) < distance)
-    //    {
-    //        distance = Vector2.Distance(inky.position, transform.position);
-    //        temp = inky;
-    //    }
-    //    if (Vector2.Distance(blinky.position, transform.position) < distance)
-    //    {
-    //        distance = Vector2.Distance(blinky.position, transform.position);
-    //        temp = blinky;
-    //    }
-    //    if (Vector2.Distance(pinky.position, transform.position) < distance)
-    //    {
-    //        distance = Vector2.Distance(pinky.position, transform.position);
-    //        temp = pinky;
-    //    }
-    //    if (Vector2.Distance(clyde.position, transform.position) < distance)
-    //    {
-    //        distance = Vector2.Distance(clyde.position, transform.position);
-    //        temp = clyde;
-    //    }
-    //    if (distance < 10)
-    //    {
-    //        return temp;
-    //    }
-    //    else
-    //    {
-    //        return null;
-    //    }
-    //}
-
-
 
     public Vector2 getDir()
     {
@@ -460,7 +359,7 @@ public class PlayerController : Agent
 
     public float euclideanDistance(float x1, float y1, float x2, float y2)
     {
-        return (float)Math.Sqrt((x1-x2) * (x1-x2) + (y1-y2) * (y1-y2));
+        return (float)Math.Sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
     }
 
     public override void AgentReset()
@@ -479,11 +378,13 @@ public class PlayerController : Agent
     {
         //System.Diagnostics.Debug.WriteLine("Agent Done");
         base.AgentOnDone();
-        
+
     }
 
-    void OnTriggerEnter2D(Collider2D other) {
-        if (other.name == "Walls"){
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.name == "Walls")
+        {
             _nextDir = -_nextDir;
         }
 
@@ -502,7 +403,7 @@ public class PlayerController : Agent
         //If(this collides with gameobject.tag(wall))
         //Then
         //Changedirection()
-        
+
         //AddReward(float);
         if (GameManager.gameState == GameManager.GameState.Dead)
         {

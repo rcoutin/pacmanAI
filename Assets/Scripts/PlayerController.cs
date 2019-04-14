@@ -209,8 +209,11 @@ public class PlayerController : Agent
             int x = (int)pacdot.transform.position.x;
             int y = (int)pacdot.transform.position.y;
 
-            minDist = Math.Min(minDist, PathFinder.findWeight(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]));
-            
+            if (new_graph.ContainsKey(x + "," + y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y))
+            {
+                minDist = Math.Min(minDist, PathFinder.findWeight(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]));
+            }
+
             //if(new_graph.ContainsKey(x + "," + y))
             //{
             //    new_graph.Add(x + "," + y, new GraphNode(x, y));
@@ -274,29 +277,9 @@ public class PlayerController : Agent
         GetComponent<Rigidbody2D>().MovePosition(p);
 
         // get the next direction from keyboard
-        //if (Input.GetAxis("Horizontal") > 0) _nextDir = Vector2.right;
-        //if (Input.GetAxis("Horizontal") < 0) _nextDir = -Vector2.right;
-        //if (Input.GetAxis("Vertical") > 0) _nextDir = Vector2.up;
-        //if (Input.GetAxis("Vertical") < 0) _nextDir = -Vector2.up;
-
+        //agentMove()
         // if pacman is in the center of a tile
-        if (Vector2.Distance(_dest, transform.position) < 0.00001f)
-        {
-            if (Valid(_nextDir))
-            {
-                _dest = (Vector2)transform.position + _nextDir;
-                _dir = _nextDir;
-                //nearestPacdot = findNearestPacdot();
-                //System.Diagnostics.Debug.WriteLine(nearestPacdot);
-            }
-            else   // if next direction is not valid
-            {
-                if (Valid(_dir))  // and the prev. direction is valid
-                    _dest = (Vector2)transform.position + _dir;   // continue on that direction
-
-                // otherwise, do nothing
-            }
-        }
+        validateAndChangeDir();
     }
 
     //bool IsColliderNearby(Vector2 direction, Color color)
@@ -338,7 +321,9 @@ public class PlayerController : Agent
             {
                 _dest = (Vector2)transform.position + _nextDir;
                 _dir = _nextDir;
+                nearestPacdot = findNearestPacdot();
             }
+
             else   // if next direction is not valid
             {
                 if (Valid(_dir))  // and the prev. direction is valid
@@ -366,22 +351,27 @@ public class PlayerController : Agent
 
     }
 
-    public override void CollectObservations()
+    private void setActionMask()
     {
         int size = 0;
         Boolean cantGoLeft = !Valid(Vector2.left), cantGoRight = !Valid(Vector2.right);
-        size += cantGoLeft ? 1:0; size += cantGoRight ? 1:0;
-        if (size > 0) SetActionMask(0, size == 2 ? new int[] { 1, 2 } : new int[] { cantGoLeft ? 1 : 2 });
+        size += cantGoLeft ? 1 : 0; size += cantGoRight ? 1 : 0;
+        if (size > 0) SetActionMask(0, size == 2 ? new int[] { 1, 2 } : new int[] {cantGoLeft ? 1 : 2 });
 
         size = 0;
         Boolean cantGoUp = !Valid(Vector2.up), cantGoDown = !Valid(Vector2.down);
         size += cantGoUp ? 1 : 0; size += cantGoDown ? 1 : 0;
-        if (size > 0) SetActionMask(1, size == 2 ? new int[] { 1, 2 }: new int[] { cantGoUp ? 1 : 2 });
+        if (size > 0) SetActionMask(1, size == 2 ? new int[] { 1, 2 } : new int[] { cantGoUp ? 1 : 2 });
+    }
 
-        AddVectorObs(gameObject.transform.position.x);
-        AddVectorObs(gameObject.transform.position.y);
+    public override void CollectObservations()
+    {
+        setActionMask();
+       // AddVectorObs(gameObject.transform.position.x);
+        //AddVectorObs(gameObject.transform.position.y);
         AddVectorObs(_dir.x);
         AddVectorObs(_dir.y);
+        AddVectorObs(nearestPacdot);
         //AddVectorObs(inkyDistance);
         //AddVectorObs(blinkyDistance);
         //AddVectorObs(pinkyDistance);
@@ -421,69 +411,74 @@ public class PlayerController : Agent
 
     }
 
-    public override void AgentAction(float[] action, String textAction)
+    public void agentMove(float[] action)
     {
-        int currentScore = GameManager.score;
-        Transform temp = transform;
         if (action[0] == 2) _nextDir = Vector2.right;
         if (action[0] == 1) _nextDir = -Vector2.right;
         if (action[1] == 1) _nextDir = Vector2.up;
         if (action[1] == 2) _nextDir = -Vector2.up;
+    }
 
-        // Collision Avoidance
-        //If(this collides with gameobject.tag(wall))
-        //Then
-        //Changedirection()
+    public float distanceToPackDotReward()
+    {
+        float distanceToPacdot = nearestPacdot;
 
-        //AddReward(float);
+        if(distanceToPacdot > 20)
+        {
+            return -0.2f;
+        }
+        if(distanceToPacdot > 10)
+        {
+            return -0.05f;
+        }
+        if(distanceToPacdot < 10)
+        {
+            return 0.2f;
+        }
+        return 0.0f;
+
+    }
+
+    private float scoreReward(float curScore,float prevScore)
+    {
+        if (curScore - prevScore > 0) return 0.3f;
+
+        if (nearestPacdot < 10) return -0.25f;
+        return -0.05f;
+    }
+    private float distanceFromGhostReward()
+    {
+        float[] ghostDistances = { inkyDistance, blinkyDistance, pinkyDistance,
+        clydeDistance};
+        float total = 0.0f;
+        foreach (float distance in ghostDistances)
+        {
+            if (distance < 1000)
+            {
+                total += (distance - 7) / 20;
+            }
+        }
+        return total;
+    }
+    public override void AgentAction(float[] action, String textAction)
+    {
+        int currentScore = GameManager.score;
+        agentMove(action);
         if (GameManager.gameState == GameManager.GameState.Dead)
         {
             AddReward(-1.0f);
+            Done();
         }
         else
         {
-            float currentReward = 0.07f;
-            int difference = currentScore - score;
-            if (difference == 0) currentReward -= 0.005f;
-            //float posDifference = euclideanDistance(transform.position.x, transform.position.y, temp.position.x, temp.position.y);
-            switch (difference)
-            {
-                case 10:
-                    currentReward += 0.3f;
-                    break;
-                //case 200:
-                //    currentReward += 0.6f;
-                //    break;
-                //case 400:
-                //    currentReward += 0.7f;
-                //    break;
-                //case 800:
-                //    currentReward += 0.8f;
-                //    break;
-                //case 1600:
-                //    currentReward += 0.9f;
-                //    break;
-            }
-
-        //    float[] ghostDistances = { inkyDistance, blinkyDistance, pinkyDistance,
-        //clydeDistance};
-
-        //    foreach (float distance in ghostDistances)
-        //    {
-        //        if (distance < 1000)
-        //        {                    
-        //            currentReward += (distance - 7) / 20;
-        //        }
-        //    }
-
-            //if (posDifference < 1) {
-            //    AddReward(-0.05f);
-            //}
-
-            AddReward(currentReward);
+            AddReward(scoreReward(currentScore, prevScore));
+            //reward to stay alive
+            //AddReward(0.002f);
+            AddReward(distanceFromGhostReward());
+            AddReward(distanceToPackDotReward());
         }
-
-        score = currentScore;
+        if (prevScore % 100 == 0) Done();
+        prevScore = currentScore;
     }
 
 }

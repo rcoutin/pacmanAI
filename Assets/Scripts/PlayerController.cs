@@ -13,14 +13,35 @@ public class PlayerController : Agent
     Vector2 _dest = Vector2.zero;
     Vector2 _dir = Vector2.zero;
     Vector2 _nextDir = Vector2.zero;
+    public GameObject destroyThis;
+    public GameObject mazeobject;
 
     public Boolean alive;
+
+    public void agent_done()
+    {
+        PrintLog("Level complete!");
+        Done();
+        destroyThis = GameObject.Find("mazeobject");
+        if (!destroyThis) destroyThis = GameObject.Find("mazeobject(Clone)");
+        Destroy(destroyThis);
+        Instantiate(mazeobject);
+        GM = GameObject.Find("Game Manager").GetComponent<GameManager>();
+        GameManager.lives = 3;
+        GameManager.Level = 0;
+        GameManager.score = 0;
+        GM.OnLevelWasLoaded();
+        GM.ResetScene();
+    }
+
     public int score;
 
     public Transform inky;
     public Transform blinky;
     public Transform pinky;
     public Transform clyde;
+
+    public int pacdotCount = 0;
 
     Dictionary<String, GraphNode> new_graph;
 
@@ -82,13 +103,14 @@ public class PlayerController : Agent
 
             if (!new_graph.ContainsKey(x + "," + y))
             {
-                new_graph.Add(x + "," + y, new GraphNode(x, y));
+                new_graph.Add(x + "," + y, new GraphNode(x, y, true));
             }
+            pacdotCount++;
             //System.Diagnostics.Debug.Print(x+","+y);
         }
 
-        new_graph.Add(15 + "," + 11, new GraphNode(15, 11));
-        new_graph.Add(14 + "," + 11, new GraphNode(14, 11));
+        new_graph.Add(15 + "," + 11, new GraphNode(15, 11, false));
+        new_graph.Add(14 + "," + 11, new GraphNode(14, 11, false));
 
         System.Diagnostics.Debug.Print(new_graph.Count + "");
 
@@ -188,7 +210,7 @@ public class PlayerController : Agent
             int y = (int)pacdot.transform.position.y;
 
             minDist = Math.Min(minDist, PathFinder.findWeight(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]));
-
+            
             //if(new_graph.ContainsKey(x + "," + y))
             //{
             //    new_graph.Add(x + "," + y, new GraphNode(x, y));
@@ -360,10 +382,10 @@ public class PlayerController : Agent
         AddVectorObs(gameObject.transform.position.y);
         AddVectorObs(_dir.x);
         AddVectorObs(_dir.y);
-        AddVectorObs(inkyDistance);
-        AddVectorObs(blinkyDistance);
-        AddVectorObs(pinkyDistance);
-        AddVectorObs(clydeDistance);
+        //AddVectorObs(inkyDistance);
+        //AddVectorObs(blinkyDistance);
+        //AddVectorObs(pinkyDistance);
+        //AddVectorObs(clydeDistance);
     }
 
     public float euclideanDistance(float x1, float y1, float x2, float y2)
@@ -422,36 +444,37 @@ public class PlayerController : Agent
         {
             float currentReward = 0.07f;
             int difference = currentScore - score;
+            if (difference == 0) currentReward -= 0.005f;
             //float posDifference = euclideanDistance(transform.position.x, transform.position.y, temp.position.x, temp.position.y);
             switch (difference)
             {
                 case 10:
                     currentReward += 0.3f;
                     break;
-                case 200:
-                    currentReward += 0.6f;
-                    break;
-                case 400:
-                    currentReward += 0.7f;
-                    break;
-                case 800:
-                    currentReward += 0.8f;
-                    break;
-                case 1600:
-                    currentReward += 0.9f;
-                    break;
+                //case 200:
+                //    currentReward += 0.6f;
+                //    break;
+                //case 400:
+                //    currentReward += 0.7f;
+                //    break;
+                //case 800:
+                //    currentReward += 0.8f;
+                //    break;
+                //case 1600:
+                //    currentReward += 0.9f;
+                //    break;
             }
 
-            float[] ghostDistances = { inkyDistance, blinkyDistance, pinkyDistance,
-        clydeDistance};
+        //    float[] ghostDistances = { inkyDistance, blinkyDistance, pinkyDistance,
+        //clydeDistance};
 
-            foreach (float distance in ghostDistances)
-            {
-                if (distance < 1000)
-                {                    
-                    currentReward += (distance - 7) / 20;
-                }
-            }
+        //    foreach (float distance in ghostDistances)
+        //    {
+        //        if (distance < 1000)
+        //        {                    
+        //            currentReward += (distance - 7) / 20;
+        //        }
+        //    }
 
             //if (posDifference < 1) {
             //    AddReward(-0.05f);

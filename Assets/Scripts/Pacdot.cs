@@ -13,8 +13,9 @@ public class Pacdot : MonoBehaviour {
 
 		    if (pacdots.Length == 1)
 		    {
-		        GameObject.FindObjectOfType<GameGUINavigation>().LoadLevel();
-		    }
-		}
+                GameObject.FindObjectOfType<PlayerController>().agent_done();
+                //GameObject.FindObjectOfType<GameGUINavigation>().LoadLevel();
+            }
+        }
 	}
 }

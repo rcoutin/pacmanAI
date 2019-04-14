@@ -21,6 +21,7 @@ public class PlayerController : Agent
     public void agent_done()
     {
         PrintLog("Level complete!");
+        AddReward(1.0f);
         Done();
         destroyThis = GameObject.Find("mazeobject");
         if (!destroyThis) destroyThis = GameObject.Find("mazeobject(Clone)");
@@ -28,8 +29,8 @@ public class PlayerController : Agent
         Instantiate(mazeobject);
         GM = GameObject.Find("Game Manager").GetComponent<GameManager>();
         GameManager.lives = 3;
-        GameManager.Level = 0;
-        GameManager.score = 0;
+        GameManager.Level++;
+        //GameManager.score = 0;
         GM.OnLevelWasLoaded();
         GM.ResetScene();
         initializeGraph();
@@ -334,7 +335,7 @@ public class PlayerController : Agent
         // get the next direction from keyboard
         //agentMove()
         // if pacman is in the center of a tile
-        followpath();
+        //followpath();
         validateAndChangeDir();
     }
 
@@ -377,7 +378,7 @@ public class PlayerController : Agent
             {
                 _dest = (Vector2)transform.position + _nextDir;
                 _dir = _nextDir;
-                //nearestPacdot = findNearestPacdot();
+                nearestPacdot = findNearestPacdotLength();
             }
 
             else   // if next direction is not valid
@@ -423,15 +424,17 @@ public class PlayerController : Agent
     public override void CollectObservations()
     {
         setActionMask();
-       // AddVectorObs(gameObject.transform.position.x);
-        //AddVectorObs(gameObject.transform.position.y);
-        AddVectorObs(_dir.x);
-        AddVectorObs(_dir.y);
-        //AddVectorObs(nearestPacdot);
-        AddVectorObs(inkyDistance);
-        AddVectorObs(blinkyDistance);
-        AddVectorObs(pinkyDistance);
-        AddVectorObs(clydeDistance);
+        AddVectorObs(transform.position);
+        AddVectorObs(_dir);
+        AddVectorObs(nearestPacdot);
+        //AddVectorObs(inkyDistance);
+        //AddVectorObs(blinkyDistance);
+        //AddVectorObs(pinkyDistance);
+        //AddVectorObs(clydeDistance);
+        //AddVectorObs(inky.position);
+        //AddVectorObs(blinky.position);
+        //AddVectorObs(pinky.position);
+        //AddVectorObs(clyde.position);
     }
 
     public float euclideanDistance(float x1, float y1, float x2, float y2)
@@ -499,8 +502,8 @@ public class PlayerController : Agent
     {
         if (curScore - prevScore > 0) return 0.3f;
 
-        if (nearestPacdot < 10) return -0.25f;
-        return -0.05f;
+        //if (nearestPacdot < 10) return -0.25f;
+        return -0.005f;
     }
     private float distanceFromGhostReward(float[] action)
     {
@@ -513,18 +516,18 @@ public class PlayerController : Agent
             {
                 total += (distance - 7) / 20;
             }
-            if (distance < 10)
-            {
-                agentMove(action);
-                validateAndChangeDir();
-            }
+            //if (distance < 10)
+            //{
+            //    agentMove(action);
+            //    validateAndChangeDir();
+            //}
         }
         return total;
     }
     public override void AgentAction(float[] action, String textAction)
     {
         int currentScore = GameManager.score;
-        //agentMove(action);
+        agentMove(action);
         if (GameManager.gameState == GameManager.GameState.Dead)
         {
             AddReward(-1.0f);
@@ -534,11 +537,11 @@ public class PlayerController : Agent
         {
             AddReward(scoreReward(currentScore, prevScore));
             //reward to stay alive
-            AddReward(0.002f);
-            AddReward(distanceFromGhostReward(action));
+            //AddReward(0.002f);
+            //AddReward(distanceFromGhostReward(action));
             AddReward(distanceToPackDotReward());
         }
-        if (prevScore % 100 == 0) Done();
+        //if (prevScore % 100 == 0) Done();
         prevScore = currentScore;
     }
 

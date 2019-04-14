@@ -109,6 +109,11 @@ public class PlayerController : Agent
             //System.Diagnostics.Debug.Print(x+","+y);
         }
 
+        new_graph["4,8"].isPowerUp = true;
+        new_graph["4,26"].isPowerUp = true;
+        new_graph["25,26"].isPowerUp = true;
+        new_graph["25,8"].isPowerUp = true;
+
         new_graph.Add(15 + "," + 11, new GraphNode(15, 11, false));
         new_graph.Add(14 + "," + 11, new GraphNode(14, 11, false));
 
@@ -224,6 +229,106 @@ public class PlayerController : Agent
         return minDist;
     }
 
+
+    private Dictionary<int,float[]> getDirection ()
+    {
+
+        Dictionary<int,float[]> final_states = new Dictionary<int, float[]>();
+
+        int x = (int)transform.position.x;
+        int y = (int)transform.position.y;
+
+        String key = (int)transform.position.x + "," + (int)transform.position.y;
+        if (!new_graph.ContainsKey(key))
+        {
+            return null;
+        }
+        GraphNode current = new_graph[key];
+
+        List<List<GraphNode>> pathList = PathFinder.expand(current, 10);
+
+        Dictionary<GraphNode, float[]> directions = new Dictionary<GraphNode, float[]>();
+
+        foreach (List<GraphNode> path in pathList)
+        {
+            GraphNode next = path[path.Count - 1];
+            if (!directions.ContainsKey(next))
+            {
+                directions.Add(next, new float[3]);
+            }
+
+            for (int i=0;i<path.Count;i++)
+            {
+                if (isGhost(path[i]))
+                {
+                    directions[path[i]][0] += 0.2f;
+                }
+                if (path[i].isPacDot)
+                {
+                    directions[path[i]][1] += 0.1f;
+                }
+                if (path[i].isPowerUp)
+                {
+                    directions[path[i]][2] += 0.5f;
+                }
+            }
+        }
+
+        foreach (GraphNode next in directions.Keys)
+        {
+            //0 = right
+            //1 = left
+            //2 = up
+            //3 = down
+
+            if (next.x > x)
+            {
+                final_states.Add(0,directions[next]);
+            }
+            else if (next.x < x)
+            {
+                final_states.Add(1, directions[next]);
+            }
+            else if (next.y > y)
+            {
+                final_states.Add(2, directions[next]);
+            }
+            else if (next.y < y)
+            {
+                final_states.Add(3, directions[next]);
+            }
+
+        }
+
+        return final_states;
+    }
+
+
+    private bool isGhost(GraphNode node)
+    {
+        int x = node.x;
+        int y = node.y;
+
+        if (x == (int)blinky.transform.position.x && y == (int)blinky.transform.position.y)
+        {
+            return true;
+        }
+        if (x == (int)inky.transform.position.x && y == (int)inky.transform.position.y)
+        {
+            return true;
+        }
+        if (x == (int)pinky.transform.position.x && y == (int)pinky.transform.position.y)
+        {
+            return true;
+        }
+        if (x == (int)clyde.transform.position.x && y == (int)clyde.transform.position.y)
+        {
+            return true;
+        }
+
+        return false;
+
+    }
 
     private GraphNode findNearestPacdot()
     {
@@ -370,7 +475,7 @@ public class PlayerController : Agent
     private void validateAndChangeDir()
     {
         // if pacman is in the center of a tile
-        if (Vector2.Distance(_dest, transform.position) < 0.00001f)
+        if (Vector2.Distance(_dest, transform.position) == 0.0f)
         {
             if (Valid(_nextDir))
             {

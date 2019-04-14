@@ -7,7 +7,9 @@ public class GraphNode
     public GraphNode prev;
     public int x;
     public int y;
+    public int level = 0;
     public bool isPacDot;
+    public bool isPowerUp;
     public HashSet<GraphNode> adjacent = new HashSet<GraphNode>();
 
     public GraphNode(int x, int y, bool isPacDot)
@@ -15,6 +17,7 @@ public class GraphNode
         this.x = x;
         this.y = y;
         this.isPacDot = isPacDot;
+        isPowerUp = false;
     }
 
     public override bool Equals(object obj)

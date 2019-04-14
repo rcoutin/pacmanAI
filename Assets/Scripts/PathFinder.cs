@@ -80,4 +80,52 @@ public class PathFinder
         }
         return path;
     }
+
+
+    public static List<List<GraphNode>> expand(GraphNode src, int k)
+    {
+        List<List<GraphNode>> pathList = new List<List<GraphNode>>();
+
+        if (src == null)
+        {
+            return pathList;
+        }
+
+        HashSet<GraphNode> visited = new HashSet<GraphNode>();
+        Queue<GraphNode> queue = new Queue<GraphNode>();
+        queue.Enqueue(src);
+        visited.Add(src);
+        src.prev = null;
+        src.level = 0;
+
+        while (queue.Count != 0 && queue.Peek().level < k)
+        {
+            GraphNode node = queue.Dequeue();
+            visited.Add(node);
+
+            foreach (GraphNode n in node.adjacent)
+            {
+                if (!visited.Contains(n))
+                {
+                    queue.Enqueue(n);
+                    n.level = node.level + 1;
+                    n.prev = node;
+                }
+            }
+        }
+
+        while (queue.Count != 0)
+        {
+            GraphNode node = queue.Dequeue();
+            List<GraphNode> path = new List<GraphNode>();
+            while (node.prev != null)
+            {
+                path.Add(node);
+                node = node.prev;
+            }
+            pathList.Add(path);
+
+        }
+        return pathList;
+    }
 }

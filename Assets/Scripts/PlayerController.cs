@@ -32,6 +32,7 @@ public class PlayerController : Agent
         GameManager.score = 0;
         GM.OnLevelWasLoaded();
         GM.ResetScene();
+        initializeGraph();
     }
 
     public int prevScore;
@@ -370,7 +371,7 @@ public class PlayerController : Agent
     private void validateAndChangeDir()
     {
         // if pacman is in the center of a tile
-        if (Vector2.Distance(_dest, transform.position) < 0.00001f)
+        if (Vector2.Distance(_dest, transform.position) == 0.0000f)
         {
             if (Valid(_nextDir))
             {
@@ -426,11 +427,11 @@ public class PlayerController : Agent
         //AddVectorObs(gameObject.transform.position.y);
         AddVectorObs(_dir.x);
         AddVectorObs(_dir.y);
-        AddVectorObs(nearestPacdot);
-        //AddVectorObs(inkyDistance);
-        //AddVectorObs(blinkyDistance);
-        //AddVectorObs(pinkyDistance);
-        //AddVectorObs(clydeDistance);
+        //AddVectorObs(nearestPacdot);
+        AddVectorObs(inkyDistance);
+        AddVectorObs(blinkyDistance);
+        AddVectorObs(pinkyDistance);
+        AddVectorObs(clydeDistance);
     }
 
     public float euclideanDistance(float x1, float y1, float x2, float y2)
@@ -468,10 +469,10 @@ public class PlayerController : Agent
 
     public void agentMove(float[] action)
     {
-        //if (action[0] == 2) _nextDir = Vector2.right;
-        //if (action[0] == 1) _nextDir = -Vector2.right;
-        //if (action[1] == 1) _nextDir = Vector2.up;
-        //if (action[1] == 2) _nextDir = -Vector2.up;
+        if (action[0] == 2) _nextDir = Vector2.right;
+        if (action[0] == 1) _nextDir = -Vector2.right;
+        if (action[1] == 1) _nextDir = Vector2.up;
+        if (action[1] == 2) _nextDir = -Vector2.up;
     }
 
     public float distanceToPackDotReward()
@@ -501,7 +502,7 @@ public class PlayerController : Agent
         if (nearestPacdot < 10) return -0.25f;
         return -0.05f;
     }
-    private float distanceFromGhostReward()
+    private float distanceFromGhostReward(float[] action)
     {
         float[] ghostDistances = { inkyDistance, blinkyDistance, pinkyDistance,
         clydeDistance};
@@ -512,13 +513,18 @@ public class PlayerController : Agent
             {
                 total += (distance - 7) / 20;
             }
+            if (distance < 10)
+            {
+                agentMove(action);
+                validateAndChangeDir();
+            }
         }
         return total;
     }
     public override void AgentAction(float[] action, String textAction)
     {
         int currentScore = GameManager.score;
-        agentMove(action);
+        //agentMove(action);
         if (GameManager.gameState == GameManager.GameState.Dead)
         {
             AddReward(-1.0f);
@@ -528,8 +534,8 @@ public class PlayerController : Agent
         {
             AddReward(scoreReward(currentScore, prevScore));
             //reward to stay alive
-            //AddReward(0.002f);
-            AddReward(distanceFromGhostReward());
+            AddReward(0.002f);
+            AddReward(distanceFromGhostReward(action));
             AddReward(distanceToPackDotReward());
         }
         if (prevScore % 100 == 0) Done();

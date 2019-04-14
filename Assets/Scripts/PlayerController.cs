@@ -43,7 +43,7 @@ public class PlayerController : Agent
 
     public int pacdotCount = 0;
 
-    Dictionary<String, GraphNode> new_graph;
+    public Dictionary<String, GraphNode> new_graph;
 
     private float inkyDistance = 9999;
     private float blinkyDistance = 9999;
@@ -236,6 +236,7 @@ public class PlayerController : Agent
             return null;
         }
         GraphNode current = new_graph[key];
+        new_graph[x + "," + y].isPacDot = false;
         List<GraphNode> path = PathFinder.findClosestPacdot(current);
 
         return path[path.Count - 1];
@@ -248,24 +249,32 @@ public class PlayerController : Agent
         int y = (int)transform.position.y;
 
         GraphNode next = findNearestPacdot();
+        
+        //if (x == next.x && y == next.y)
+        //{
+        //    next.isPacDot = false;
+        //}
 
         if (next.x > x)
         {
             _nextDir = Vector2.right;
         }
-        if (next.x < x)
+        else if (next.x < x)
         {
-            _nextDir = -Vector2.right;
+            _nextDir = Vector2.left;
         }
-        if (next.y > y)
+        else if (next.y > y)
         {
             _nextDir = Vector2.up;
         }
-        if (next.y < y)
+        else if (next.y < y)
         {
-            _nextDir = -Vector2.up;
+            _nextDir = Vector2.down;
         }
-
+        else
+        {
+            _nextDir = Vector2.right;
+        }
     }
 
 

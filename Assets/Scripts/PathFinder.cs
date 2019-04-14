@@ -61,10 +61,11 @@ public class PathFinder
             visited.Add(node);
             if (node.isPacDot)
             {
+                //path.Add(node);
                 while (node.prev != null)
                 {
-                    node = node.prev;
                     path.Add(node);
+                    node = node.prev;
                 }
                 return path;
             }

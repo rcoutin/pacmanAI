@@ -5,9 +5,9 @@ using UnityEngine;
 public class GraphNode
 {
     public GraphNode prev;
-    int x;
-    int y;
-    bool isPacDot;
+    public int x;
+    public int y;
+    public bool isPacDot;
     public HashSet<GraphNode> adjacent = new HashSet<GraphNode>();
 
     public GraphNode(int x, int y, bool isPacDot)

@@ -34,7 +34,7 @@ public class PlayerController : Agent
         GM.ResetScene();
     }
 
-    public int score;
+    public int prevScore;
 
     public Transform inky;
     public Transform blinky;
@@ -167,19 +167,19 @@ public class PlayerController : Agent
     void FixedUpdate()
     {
         blinkyDistance = new_graph.ContainsKey((int)blinky.transform.position.x + "," + (int)blinky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)blinky.transform.position.x + "," + (int)blinky.transform.position.y])
+            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)blinky.transform.position.x + "," + (int)blinky.transform.position.y]).Count
             : 9999;
 
         inkyDistance = new_graph.ContainsKey((int)inky.transform.position.x + "," + (int)inky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)inky.transform.position.x + "," + (int)inky.transform.position.y])
+            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)inky.transform.position.x + "," + (int)inky.transform.position.y]).Count
             : 9999;
 
         pinkyDistance = new_graph.ContainsKey((int)pinky.transform.position.x + "," + (int)pinky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)pinky.transform.position.x + "," + (int)pinky.transform.position.y])
+            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)pinky.transform.position.x + "," + (int)pinky.transform.position.y]).Count
             : 9999;
 
         clydeDistance = new_graph.ContainsKey((int)clyde.transform.position.x + "," + (int)clyde.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findWeight(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y])
+            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y]).Count
             : 9999;
 
 
@@ -198,7 +198,7 @@ public class PlayerController : Agent
 
     }
 
-    private float findNearestPacdot()
+    private float findNearestPacdotLength()
     {
         float minDist = 9999;
         GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
@@ -211,7 +211,7 @@ public class PlayerController : Agent
 
             if (new_graph.ContainsKey(x + "," + y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y))
             {
-                minDist = Math.Min(minDist, PathFinder.findWeight(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]));
+                minDist = Math.Min(minDist, PathFinder.findPath(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]).Count);
             }
 
             //if(new_graph.ContainsKey(x + "," + y))
@@ -223,6 +223,51 @@ public class PlayerController : Agent
         //System.Diagnostics.Debug.WriteLine("MinDist "+minDist);
         return minDist;
     }
+
+
+    private GraphNode findNearestPacdot()
+    {
+        int x = (int)transform.position.x;
+        int y = (int)transform.position.y;
+       
+        String key = (int)transform.position.x + "," + (int)transform.position.y;
+        if (!new_graph.ContainsKey(key))
+        {
+            return null;
+        }
+        GraphNode current = new_graph[key];
+        List<GraphNode> path = PathFinder.findClosestPacdot(current);
+
+        return path[path.Count - 1];
+    }
+
+
+    public void followpath()
+    {
+        int x = (int)transform.position.x;
+        int y = (int)transform.position.y;
+
+        GraphNode next = findNearestPacdot();
+
+        if (next.x > x)
+        {
+            _nextDir = Vector2.right;
+        }
+        if (next.x < x)
+        {
+            _nextDir = -Vector2.right;
+        }
+        if (next.y > y)
+        {
+            _nextDir = Vector2.up;
+        }
+        if (next.y < y)
+        {
+            _nextDir = -Vector2.up;
+        }
+
+    }
+
 
     IEnumerator PlayDeadAnimation()
     {
@@ -279,6 +324,7 @@ public class PlayerController : Agent
         // get the next direction from keyboard
         //agentMove()
         // if pacman is in the center of a tile
+        followpath();
         validateAndChangeDir();
     }
 
@@ -321,7 +367,7 @@ public class PlayerController : Agent
             {
                 _dest = (Vector2)transform.position + _nextDir;
                 _dir = _nextDir;
-                nearestPacdot = findNearestPacdot();
+                //nearestPacdot = findNearestPacdot();
             }
 
             else   // if next direction is not valid
@@ -413,10 +459,10 @@ public class PlayerController : Agent
 
     public void agentMove(float[] action)
     {
-        if (action[0] == 2) _nextDir = Vector2.right;
-        if (action[0] == 1) _nextDir = -Vector2.right;
-        if (action[1] == 1) _nextDir = Vector2.up;
-        if (action[1] == 2) _nextDir = -Vector2.up;
+        //if (action[0] == 2) _nextDir = Vector2.right;
+        //if (action[0] == 1) _nextDir = -Vector2.right;
+        //if (action[1] == 1) _nextDir = Vector2.up;
+        //if (action[1] == 2) _nextDir = -Vector2.up;
     }
 
     public float distanceToPackDotReward()

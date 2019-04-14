@@ -245,7 +245,7 @@ public class PlayerController : Agent
         }
         GraphNode current = new_graph[key];
 
-        List<List<GraphNode>> pathList = PathFinder.expand(current, 10);
+        List<List<GraphNode>> pathList = PathFinder.expand(current, 5);
 
         Dictionary<GraphNode, float[]> directions = new Dictionary<GraphNode, float[]>();
 
@@ -261,15 +261,15 @@ public class PlayerController : Agent
             {
                 if (isGhost(path[i]))
                 {
-                    directions[path[i]][0] += 0.2f;
+                    directions[next][0] += 0.2f;
                 }
                 if (path[i].isPacDot)
                 {
-                    directions[path[i]][1] += 0.1f;
+                    directions[next][1] += 0.1f;
                 }
                 if (path[i].isPowerUp)
                 {
-                    directions[path[i]][2] += 0.5f;
+                    directions[next][2] += 0.5f;
                 }
             }
         }
@@ -280,26 +280,29 @@ public class PlayerController : Agent
             //1 = left
             //2 = up
             //3 = down
-
+            PrintLog("Key" + next.x+" "+ next.y);
             if (next.x > x)
             {
+                PrintLog(string.Join("\n", directions[next]));
                 final_states.Add(0,directions[next]);
             }
             else if (next.x < x)
             {
+                PrintLog(string.Join("\n", directions[next]));
                 final_states.Add(1, directions[next]);
             }
             else if (next.y > y)
             {
+                PrintLog(string.Join("\n", directions[next]));
                 final_states.Add(2, directions[next]);
             }
             else if (next.y < y)
             {
+                PrintLog(string.Join("\n", directions[next]));
                 final_states.Add(3, directions[next]);
             }
 
         }
-
         return final_states;
     }
 
@@ -438,7 +441,7 @@ public class PlayerController : Agent
         // get the next direction from keyboard
         //agentMove()
         // if pacman is in the center of a tile
-        followpath();
+        //followpath();
         validateAndChangeDir();
     }
 
@@ -477,6 +480,12 @@ public class PlayerController : Agent
         // if pacman is in the center of a tile
         if (Vector2.Distance(_dest, transform.position) == 0.0f)
         {
+            getDirection();
+            if (new_graph.ContainsKey(transform.position.x + "," + transform.position.y))
+            {
+                new_graph[transform.position.x + "," + transform.position.y].isPacDot = false;
+                new_graph[transform.position.x + "," + transform.position.y].isPowerUp = false;
+            }
             if (Valid(_nextDir))
             {
                 _dest = (Vector2)transform.position + _nextDir;

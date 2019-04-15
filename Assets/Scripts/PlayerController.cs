@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 public class PlayerController : Agent
 {
-
+    private bool debugEnabled = true;
     public float speed = 0.4f;
     Vector2 _dest = Vector2.zero;
     Vector2 _dir = Vector2.zero;
@@ -16,20 +16,23 @@ public class PlayerController : Agent
     public GameObject destroyThis;
     public GameObject mazeobject;
 
-    public Boolean alive;
+    public MazeGraph graph;
 
+    public Boolean alive;
+    private Dictionary<int, float[]> currentState;
     public void agent_done()
     {
         PrintLog("Level complete!");
         Done();
+        AddReward(1.0f);
         destroyThis = GameObject.Find("mazeobject");
         if (!destroyThis) destroyThis = GameObject.Find("mazeobject(Clone)");
         Destroy(destroyThis);
         Instantiate(mazeobject);
         GM = GameObject.Find("Game Manager").GetComponent<GameManager>();
         GameManager.lives = 3;
-        GameManager.Level = 0;
-        GameManager.score = 0;
+        GameManager.Level++ ;
+       // GameManager.score = 0;
         GM.OnLevelWasLoaded();
         GM.ResetScene();
     }
@@ -43,13 +46,11 @@ public class PlayerController : Agent
 
     public int pacdotCount = 0;
 
-    public Dictionary<String, GraphNode> new_graph;
-
     private float inkyDistance = 9999;
     private float blinkyDistance = 9999;
     private float pinkyDistance = 9999;
     private float clydeDistance = 9999;
-    private float nearestPacdot = 9999;
+    private float nearestPacdotDistance = 9999;
 
 
     [Serializable]
@@ -80,7 +81,7 @@ public class PlayerController : Agent
         _dest = transform.position;
         try
         {
-            initializeGraph();
+            graph = new MazeGraph();
         }
         catch (Exception e)
         {
@@ -89,105 +90,33 @@ public class PlayerController : Agent
         }
     }
 
-    private void initializeGraph()
+
+    private void updateOnNodeChange()
     {
-        new_graph = new Dictionary<String, GraphNode>();
-
-        GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
-        System.Diagnostics.Debug.Print(currentPacdots.Length + "");
-
-        foreach (GameObject pacdot in currentPacdots)
+        updateDirectionStates();
+        findNearestPacdot(); // this assigns to the nearestPacdotLength
+        updateGhostDistances();
+        // update positions of power up and pacdot
+        if (graph.ContainsNode(transform))
         {
-            int x = (int)pacdot.transform.position.x;
-            int y = (int)pacdot.transform.position.y;
-
-            if (!new_graph.ContainsKey(x + "," + y))
-            {
-                new_graph.Add(x + "," + y, new GraphNode(x, y, true));
-            }
-            pacdotCount++;
-            //System.Diagnostics.Debug.Print(x+","+y);
+            GraphNode currentPacman = graph.GetNode(transform);
+            currentPacman.isPacDot = false;
+            currentPacman.isPowerUp = false;
         }
+        
+    }
 
-        new_graph["4,8"].isPowerUp = true;
-        new_graph["4,26"].isPowerUp = true;
-        new_graph["25,26"].isPowerUp = true;
-        new_graph["25,8"].isPowerUp = true;
-
-        new_graph.Add(15 + "," + 11, new GraphNode(15, 11, false));
-        new_graph.Add(14 + "," + 11, new GraphNode(14, 11, false));
-
-        System.Diagnostics.Debug.Print(new_graph.Count + "");
-
-        int[,] graph2 = new int[30, 33];
-        for (int i = 0; i < graph2.GetLength(0); i++)
-        {
-            for (int j = 0; j < graph2.GetLength(1); j++)
-            {
-                graph2[i, j] = -1;
-            }
-        }
-        graph2[15, 11] = 1;
-        graph2[14, 11] = 1;
-
-        foreach (GameObject pacdot in currentPacdots)
-        {
-            int i = (int)pacdot.transform.position.x;
-            int j = (int)pacdot.transform.position.y;
-            graph2[i, j] = 1;
-        }
-
-        for (int i = 1; i < graph2.GetLength(0) - 1; i++)
-        {
-            for (int j = 1; j < graph2.GetLength(1) - 1; j++)
-            {
-                if (graph2[i, j] == 1)
-                {
-                    String key = i + "," + j;
-
-                    GraphNode node = new_graph[key];
-                    if (graph2[i + 1, j] == 1)
-                    {
-                        node.adjacent.Add(new_graph[(i + 1) + "," + j]);
-                    }
-                    if (graph2[i, j + 1] == 1)
-                    {
-                        node.adjacent.Add(new_graph[(i) + "," + (j + 1)]);
-                    }
-                    if (graph2[i - 1, j] == 1)
-                    {
-                        node.adjacent.Add(new_graph[(i - 1) + "," + j]);
-                    }
-                    if (graph2[i, j - 1] == 1)
-                    {
-                        node.adjacent.Add(new_graph[(i) + "," + (j - 1)]);
-                    }
-
-                }
-            }
-        }
+    private void updateGhostDistances()
+    {
+        blinkyDistance = graph.distFrom(transform, blinky);
+        inkyDistance = graph.distFrom(transform, inky);
+        pinkyDistance = graph.distFrom(transform, pinky);
+        clydeDistance = graph.distFrom(transform, clyde);
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        blinkyDistance = new_graph.ContainsKey((int)blinky.transform.position.x + "," + (int)blinky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)blinky.transform.position.x + "," + (int)blinky.transform.position.y]).Count
-            : 9999;
-
-        inkyDistance = new_graph.ContainsKey((int)inky.transform.position.x + "," + (int)inky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)inky.transform.position.x + "," + (int)inky.transform.position.y]).Count
-            : 9999;
-
-        pinkyDistance = new_graph.ContainsKey((int)pinky.transform.position.x + "," + (int)pinky.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)pinky.transform.position.x + "," + (int)pinky.transform.position.y]).Count
-            : 9999;
-
-        clydeDistance = new_graph.ContainsKey((int)clyde.transform.position.x + "," + (int)clyde.transform.position.y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y)
-            ? PathFinder.findPath(new_graph[(int)transform.position.x + "," + (int)transform.position.y], new_graph[(int)clyde.transform.position.x + "," + (int)clyde.transform.position.y]).Count
-            : 9999;
-
-
         switch (GameManager.gameState)
         {
             case GameManager.GameState.Game:
@@ -203,107 +132,93 @@ public class PlayerController : Agent
 
     }
 
-    private float findNearestPacdotLength()
+    //private float findNearestPacdotLength()
+    //{
+    //    float minDist = 9999;
+    //    GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
+    //    foreach (GameObject pacdot in currentPacdots)
+    //    {
+    //        if (pacdot == null) continue;
+
+    //        int x = (int)pacdot.transform.position.x;
+    //        int y = (int)pacdot.transform.position.y;
+
+    //        if (new_graph.ContainsKey(x + "," + y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y))
+    //        {
+    //            minDist = Math.Min(minDist, PathFinder.findPath(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]).Count);
+    //        }
+    //    }
+    //    return minDist;
+    //}
+
+
+    private void updateDirectionStates()
     {
-        float minDist = 9999;
-        GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
-        foreach (GameObject pacdot in currentPacdots)
+        //unsafe,safe,food
+        String[] colorNames = new String[] { "red", "green", "yellow" };
+        Color[] colors = new Color[] { Color.red, Color.green, Color.yellow};
+        int colorIndex = 0;
+        Dictionary<int,float[]> dirState = new Dictionary<int, float[]>();
+        
+        //initialize
+        for (int i = 0; i < 4; i++)
         {
-            if (pacdot == null) continue;
-
-            int x = (int)pacdot.transform.position.x;
-            int y = (int)pacdot.transform.position.y;
-
-            if (new_graph.ContainsKey(x + "," + y) && new_graph.ContainsKey((int)transform.position.x + "," + (int)transform.position.y))
-            {
-                minDist = Math.Min(minDist, PathFinder.findPath(new_graph[x + "," + y], new_graph[(int)transform.position.x + "," + (int)transform.position.y]).Count);
-            }
-
-            //if(new_graph.ContainsKey(x + "," + y))
-            //{
-            //    new_graph.Add(x + "," + y, new GraphNode(x, y));
-            //}
-            //System.Diagnostics.Debug.Print(x+","+y);
+            dirState.Add(i,new float[] { 1, 0, 0 });
         }
-        //System.Diagnostics.Debug.WriteLine("MinDist "+minDist);
-        return minDist;
-    }
-
-
-    private Dictionary<int,float[]> getDirection ()
-    {
-
-        Dictionary<int,float[]> final_states = new Dictionary<int, float[]>();
-
-        int x = (int)transform.position.x;
-        int y = (int)transform.position.y;
-
-        String key = (int)transform.position.x + "," + (int)transform.position.y;
-        if (!new_graph.ContainsKey(key))
-        {
-            return null;
-        }
-        GraphNode current = new_graph[key];
-
-        List<List<GraphNode>> pathList = PathFinder.expand(current, 5);
-
-        Dictionary<GraphNode, float[]> directions = new Dictionary<GraphNode, float[]>();
-
+        GraphNode current = graph.GetNode(transform);
+      
+        if (current == null) return;
+        int x = current.x;
+        int y = current.y;
+        List<List<GraphNode>> pathList = PathFinder.expand(current, 10);
+        
+       
         foreach (List<GraphNode> path in pathList)
         {
-            GraphNode next = path[path.Count - 1];
-            if (!directions.ContainsKey(next))
-            {
-                directions.Add(next, new float[3]);
-            }
+           
+            GraphNode next = path[path.Count - 2];
+            int dir = -1;
+            //PrintLog(string.Join(", ",new int[] { x, y, next.x, next.y }));
+            if (next.x > x) dir = 1;
+            else if (next.x < x) dir = 0;
+            else if (next.y > y) dir = 2;
+            else if (next.y < y) dir = 3;
+            if (dir == -1) continue;
 
-            for (int i=0;i<path.Count;i++)
+            for (int i=0;i<path.Count-1;i++)
             {
                 if (isGhost(path[i]))
                 {
-                    directions[next][0] += 0.2f;
+                    dirState[dir][0] -= 0.5f;
                 }
                 if (path[i].isPacDot)
                 {
-                    directions[next][1] += 0.1f;
+                    dirState[dir][1] += 0.2f;
                 }
                 if (path[i].isPowerUp)
                 {
-                    directions[next][2] += 0.5f;
+                    dirState[dir][2] += 0.5f;
                 }
             }
-        }
-
-        foreach (GraphNode next in directions.Keys)
-        {
-            //0 = right
-            //1 = left
-            //2 = up
-            //3 = down
-            PrintLog("Key" + next.x+" "+ next.y);
-            if (next.x > x)
+            if(dirState[dir][0] < 1)
             {
-                PrintLog(string.Join("\n", directions[next]));
-                final_states.Add(0,directions[next]);
+                colorIndex = 0; // low safety
             }
-            else if (next.x < x)
+            else
             {
-                PrintLog(string.Join("\n", directions[next]));
-                final_states.Add(1, directions[next]);
+                colorIndex = 1;
             }
-            else if (next.y > y)
-            {
-                PrintLog(string.Join("\n", directions[next]));
-                final_states.Add(2, directions[next]);
-            }
-            else if (next.y < y)
-            {
-                PrintLog(string.Join("\n", directions[next]));
-                final_states.Add(3, directions[next]);
-            }
+            //if(dirState[dir][1] > 2.4 && dirState[dir][0] > 0) // some pacdots and slightly safe
+            //{
+            //    colorIndex = 2;
+            //}
+            MazeGraph.drawPathLines(path, colors[colorIndex] , 1);
+            //PrintLog("PathColor " + colorNames[colorIndex] + string.Join("-", dirState[dir]));
 
         }
-        return final_states;
+        // adding default values for unassigned directions
+       
+        currentState = dirState;
     }
 
 
@@ -312,19 +227,19 @@ public class PlayerController : Agent
         int x = node.x;
         int y = node.y;
 
-        if (x == (int)blinky.transform.position.x && y == (int)blinky.transform.position.y)
+        if ((x == (int)blinky.transform.position.x) && (y == (int)blinky.transform.position.y))
         {
             return true;
         }
-        if (x == (int)inky.transform.position.x && y == (int)inky.transform.position.y)
+        if ((x == (int)inky.transform.position.x) && (y == (int)inky.transform.position.y))
         {
             return true;
         }
-        if (x == (int)pinky.transform.position.x && y == (int)pinky.transform.position.y)
+        if ((x == (int)pinky.transform.position.x) && (y == (int)pinky.transform.position.y))
         {
             return true;
         }
-        if (x == (int)clyde.transform.position.x && y == (int)clyde.transform.position.y)
+        if ((x == (int)clyde.transform.position.x) && (y == (int)clyde.transform.position.y))
         {
             return true;
         }
@@ -333,20 +248,17 @@ public class PlayerController : Agent
 
     }
 
+    
+
     private GraphNode findNearestPacdot()
     {
-        int x = (int)transform.position.x;
-        int y = (int)transform.position.y;
-       
-        String key = (int)transform.position.x + "," + (int)transform.position.y;
-        if (!new_graph.ContainsKey(key))
-        {
-            return null;
-        }
-        GraphNode current = new_graph[key];
-        new_graph[x + "," + y].isPacDot = false;
-        List<GraphNode> path = PathFinder.findClosestPacdot(current);
+        GraphNode current = graph.GetNode(transform);
+        if (current == null) return null;
+        current.isPacDot = false;
+        List<GraphNode> path = PathFinder.findPathToClosestPacdot(current);
+        MazeGraph.drawPathLines(path,Color.magenta,1.5f);
 
+        nearestPacdotDistance = path.Count;
         return path[path.Count - 1];
     }
 
@@ -445,21 +357,20 @@ public class PlayerController : Agent
         validateAndChangeDir();
     }
 
-    //bool IsColliderNearby(Vector2 direction, Color color)
-    //{
-    //    // cast line from 'next to pacman' to pacman
-    //    // not from directly the center of next tile but just a little further from center of next tile
-    //    Vector2 pos = transform.position;
-    //    direction += new Vector2(direction.x * 0.45f, direction.y * 0.45f);
-    //    RaycastHit2D hit = Physics2D.Linecast(pos + direction, pos);
-    //    PrintLog(hit.collider.name + " " + hit.point + " " + hit.distance);
-    //    //UnityEngine.Debug.DrawRay(transform.position, direction * 5, color, 1000000, false);
-    //    return hit.collider.name == "maze";
-    //}
+    bool IsColliderNearby(Vector2 direction)
+    {
+        // cast line from 'next to pacman' to pacman
+        // not from directly the center of next tile but just a little further from center of next tile
+        Vector2 pos = transform.position;
+        direction += new Vector2(direction.x * 0.45f, direction.y * 0.45f);
+        RaycastHit2D hit = Physics2D.Linecast(pos + direction, pos);
+        //UnityEngine.Debug.DrawRay(transform.position, direction * 5, color, 1000000, false);
+        return hit.collider.name == "maze";
+    }
 
     void PrintLog(System.Object s)
     {
-        System.Diagnostics.Debug.WriteLine(s);
+        if(debugEnabled) System.Diagnostics.Debug.WriteLine(s);
 
     }
 
@@ -478,19 +389,15 @@ public class PlayerController : Agent
     private void validateAndChangeDir()
     {
         // if pacman is in the center of a tile
-        if (Vector2.Distance(_dest, transform.position) == 0.0f)
+        if (Vector2.Distance(_dest, transform.position) < 0.001f)
         {
-            getDirection();
-            if (new_graph.ContainsKey(transform.position.x + "," + transform.position.y))
-            {
-                new_graph[transform.position.x + "," + transform.position.y].isPacDot = false;
-                new_graph[transform.position.x + "," + transform.position.y].isPowerUp = false;
-            }
+            updateOnNodeChange();
+            RequestDecision();
             if (Valid(_nextDir))
             {
                 _dest = (Vector2)transform.position + _nextDir;
                 _dir = _nextDir;
-                //nearestPacdot = findNearestPacdot();
+                
             }
 
             else   // if next direction is not valid
@@ -536,15 +443,41 @@ public class PlayerController : Agent
     public override void CollectObservations()
     {
         setActionMask();
-       // AddVectorObs(gameObject.transform.position.x);
-        //AddVectorObs(gameObject.transform.position.y);
-        AddVectorObs(_dir.x);
-        AddVectorObs(_dir.y);
-        AddVectorObs(nearestPacdot);
-        //AddVectorObs(inkyDistance);
-        //AddVectorObs(blinkyDistance);
-        //AddVectorObs(pinkyDistance);
-        //AddVectorObs(clydeDistance);
+        if (currentState != null)
+        {
+            AddVectorObs(currentState[0]);
+            AddVectorObs(currentState[1]);
+            AddVectorObs(currentState[2]);
+            AddVectorObs(currentState[3]);
+           
+        }
+        else
+        {
+            AddVectorObs(new float[] { 1,0,0});
+            AddVectorObs(new float[] { 1, 0, 0 });
+            AddVectorObs(new float[] { 1, 0, 0 });
+            AddVectorObs(new float[] { 1, 0, 0 });
+        }
+        AddVectorObs(nearestPacdotDistance);
+        AddVectorObs(_dir);
+        //if (_dir.Equals(Vector2.left))
+        //{
+        //    AddVectorObs(0);
+        //}
+        //else if(_dir.Equals(Vector2.right))
+        //{
+        //    AddVectorObs(1);
+        //}
+        //else if (_dir.Equals(Vector2.up))
+        //{
+        //    AddVectorObs(2);
+        //}
+        //else if (_dir.Equals(Vector2.down))
+        //{
+        //    AddVectorObs(3);
+        //}
+        AddVectorObs(blinkyDistance);
+
     }
 
     public float euclideanDistance(float x1, float y1, float x2, float y2)
@@ -582,27 +515,26 @@ public class PlayerController : Agent
 
     public void agentMove(float[] action)
     {
-        //if (action[0] == 2) _nextDir = Vector2.right;
-        //if (action[0] == 1) _nextDir = -Vector2.right;
-        //if (action[1] == 1) _nextDir = Vector2.up;
-        //if (action[1] == 2) _nextDir = -Vector2.up;
+        if (action[0] == 2) _nextDir = Vector2.right;
+        if (action[0] == 1) _nextDir = -Vector2.right;
+        if (action[1] == 1) _nextDir = Vector2.up;
+        if (action[1] == 2) _nextDir = -Vector2.up;
     }
 
     public float distanceToPackDotReward()
     {
-        float distanceToPacdot = nearestPacdot;
-
-        if(distanceToPacdot > 20)
+        float distanceToPacdot = nearestPacdotDistance;
+        if (distanceToPacdot >= 5)
         {
-            return -0.2f;
+            return -0.08f;
         }
-        if(distanceToPacdot > 10)
+        //if(distanceToPacdot > 10)
+        //{
+        //    return -0.05f;
+        //}
+        if (distanceToPacdot < 5)
         {
-            return -0.05f;
-        }
-        if(distanceToPacdot < 10)
-        {
-            return 0.2f;
+            return 0.01f;
         }
         return 0.0f;
 
@@ -610,21 +542,24 @@ public class PlayerController : Agent
 
     private float scoreReward(float curScore,float prevScore)
     {
-        if (curScore - prevScore > 0) return 0.3f;
-
-        if (nearestPacdot < 10) return -0.25f;
-        return -0.05f;
+        if (curScore - prevScore > 0) return 0.25f;
+        return -0.001f;
     }
     private float distanceFromGhostReward()
     {
-        float[] ghostDistances = { inkyDistance, blinkyDistance, pinkyDistance,
-        clydeDistance};
+        //float[] ghostDistances = { inkyDistance, blinkyDistance, pinkyDistance,
+        //clydeDistance};
+        float[] ghostDistances = { blinkyDistance };
         float total = 0.0f;
         foreach (float distance in ghostDistances)
         {
-            if (distance < 1000)
+            //if (distance < 1000) d
+            //{
+            //    total += (distance - 7) / 20;
+            //}
+            if(distance < 15)
             {
-                total += (distance - 7) / 20;
+                total += -0.05f;
             }
         }
         return total;
@@ -642,11 +577,10 @@ public class PlayerController : Agent
         {
             AddReward(scoreReward(currentScore, prevScore));
             //reward to stay alive
-            //AddReward(0.002f);
+            AddReward(0.05f);
             AddReward(distanceFromGhostReward());
             AddReward(distanceToPackDotReward());
         }
-        if (prevScore % 100 == 0) Done();
         prevScore = currentScore;
     }
 

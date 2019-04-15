@@ -3,6 +3,18 @@ using System.Collections.Generic;
 
 public class PathFinder
 {
+    public static List<GraphNode> buildPathFromPrevs(GraphNode node)
+    {
+        List<GraphNode> path = new List<GraphNode>();
+        while (node.prev != null)
+        {
+            node = node.prev;
+            path.Add(node);
+        }
+        return path;
+    }
+
+
     public static List<GraphNode> findPath(GraphNode src, GraphNode dest)
     {
         List<GraphNode> path = new List<GraphNode>();
@@ -22,12 +34,8 @@ public class PathFinder
             visited.Add(node);
             if (node == dest)
             {
-                while (node.prev != null)
-                {
-                    node = node.prev;
-                    path.Add(node);
-                }
-                return path;
+                return buildPathFromPrevs(node);
+          
             }
             foreach (GraphNode n in node.adjacent)
             {
@@ -41,8 +49,8 @@ public class PathFinder
         return path;
     }
 
-
-    public static List<GraphNode> findClosestPacdot(GraphNode src)
+    //gets path the closest pacdot
+    public static List<GraphNode> findPathToClosestPacdot(GraphNode src)
     {
         List<GraphNode> path = new List<GraphNode>();
         if (src == null)
@@ -62,12 +70,8 @@ public class PathFinder
             if (node.isPacDot)
             {
                 //path.Add(node);
-                while (node.prev != null)
-                {
-                    path.Add(node);
-                    node = node.prev;
-                }
-                return path;
+                return buildPathFromPrevs(node);
+               
             }
             foreach (GraphNode n in node.adjacent)
             {
@@ -117,14 +121,7 @@ public class PathFinder
         while (queue.Count != 0)
         {
             GraphNode node = queue.Dequeue();
-            List<GraphNode> path = new List<GraphNode>();
-            while (node.prev != null)
-            {
-                path.Add(node);
-                node = node.prev;
-            }
-            pathList.Add(path);
-
+            pathList.Add(buildPathFromPrevs(node));
         }
         return pathList;
     }

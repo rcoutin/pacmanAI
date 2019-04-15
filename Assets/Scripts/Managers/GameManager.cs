@@ -110,16 +110,16 @@ public class GameManager : MonoBehaviour {
         CalmGhosts();
 
 		pacman.transform.position = new Vector3(15f, 11f, 0f);
-		blinky.transform.position = new Vector3(15f, 20f, 0f);
-		pinky.transform.position = new Vector3(14.5f, 17f, 0f);
-		inky.transform.position = new Vector3(16.5f, 17f, 0f);
-		clyde.transform.position = new Vector3(12.5f, 17f, 0f);
+		if(blinky!=null)blinky.transform.position = new Vector3(15f, 20f, 0f);
+        if (pinky != null) pinky.transform.position = new Vector3(14.5f, 17f, 0f);
+        if (inky != null) inky.transform.position = new Vector3(16.5f, 17f, 0f);
+        if (clyde != null) clyde.transform.position = new Vector3(12.5f, 17f, 0f);
 
 		pacman.GetComponent<PlayerController>().ResetDestination();
-		blinky.GetComponent<GhostMove>().InitializeGhost();
-		pinky.GetComponent<GhostMove>().InitializeGhost();
-		inky.GetComponent<GhostMove>().InitializeGhost();
-		clyde.GetComponent<GhostMove>().InitializeGhost();
+		blinky?.GetComponent<GhostMove>().InitializeGhost();
+		pinky?.GetComponent<GhostMove>().InitializeGhost();
+		inky?.GetComponent<GhostMove>().InitializeGhost();
+		clyde?.GetComponent<GhostMove>().InitializeGhost();
 
         gameState = GameState.Init;  
         gui.H_ShowReadyScreen();

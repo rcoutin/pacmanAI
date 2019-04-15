@@ -15,7 +15,7 @@ public class PlayerController : Agent
     Vector2 _nextDir = Vector2.zero;
     public GameObject destroyThis;
     public GameObject mazeobject;
-
+    private List<GraphNode> pathToClosestPacdot;
     public MazeGraph graph;
 
     public Boolean alive;
@@ -94,7 +94,7 @@ public class PlayerController : Agent
     private void updateOnNodeChange()
     {
         updateDirectionStates();
-        findNearestPacdot(); // this assigns to the nearestPacdotLength
+        findNearestPacdot(); // this assigns to float nearestPacdotLength and List<GraphNode pathToNearestPacDot
         updateGhostDistances();
         // update positions of power up and pacdot
         if (graph.ContainsNode(transform))
@@ -170,7 +170,7 @@ public class PlayerController : Agent
         if (current == null) return;
         int x = current.x;
         int y = current.y;
-        List<List<GraphNode>> pathList = PathFinder.expand(current, 10);
+        List<List<GraphNode>> pathList = PathFinder.expand(current, 12);
         
        
         foreach (List<GraphNode> path in pathList)
@@ -189,30 +189,52 @@ public class PlayerController : Agent
             {
                 if (isGhost(path[i]))
                 {
-                    dirState[dir][0] -= 0.5f;
+                    float cur = i;
+                    
+                    float safety = 1 - (cur / 10);
+                    float existingSafety = dirState[dir][0];
+                    if ( safety < existingSafety)
+                    {
+                        dirState[dir][0] = safety;
+                    }
                 }
                 if (path[i].isPacDot)
                 {
-                    dirState[dir][1] += 0.2f;
+                    dirState[dir][1] += 0.1f;
                 }
                 if (path[i].isPowerUp)
                 {
                     dirState[dir][2] += 0.5f;
                 }
             }
-            if(dirState[dir][0] < 1)
+
+            bool currentDirHasPacdots = dirState[dir][1] > 0;
+            if (!currentDirHasPacdots && pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
+            {
+                GraphNode nextNodeInPacdotPath = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
+                dirState[dir][1] += 0.2f;
+            }
+            if (dirState[dir][0] < 1)
             {
                 colorIndex = 0; // low safety
             }
             else
             {
+                if(dirState[dir][1] > 2)
+                {
+                    colorIndex = 2;
+                }
+                else
+                {
                 colorIndex = 1;
+
+                }
             }
             //if(dirState[dir][1] > 2.4 && dirState[dir][0] > 0) // some pacdots and slightly safe
             //{
             //    colorIndex = 2;
             //}
-            MazeGraph.drawPathLines(path, colors[colorIndex] , 1);
+            MazeGraph.drawPathLines(path, colors[colorIndex] , 0.3f);
             //PrintLog("PathColor " + colorNames[colorIndex] + string.Join("-", dirState[dir]));
 
         }
@@ -256,8 +278,9 @@ public class PlayerController : Agent
         if (current == null) return null;
         current.isPacDot = false;
         List<GraphNode> path = PathFinder.findPathToClosestPacdot(current);
-        MazeGraph.drawPathLines(path,Color.magenta,1.5f);
-
+        PrintLog(path.Count);
+        MazeGraph.drawPathLines(path,Color.magenta,3f);
+        pathToClosestPacdot = path;
         nearestPacdotDistance = path.Count;
         return path[path.Count - 1];
     }
@@ -458,8 +481,8 @@ public class PlayerController : Agent
             AddVectorObs(new float[] { 1, 0, 0 });
             AddVectorObs(new float[] { 1, 0, 0 });
         }
-        AddVectorObs(nearestPacdotDistance);
-        AddVectorObs(_dir);
+        //AddVectorObs(nearestPacdotDistance);
+        //AddVectorObs(_dir);
         //if (_dir.Equals(Vector2.left))
         //{
         //    AddVectorObs(0);
@@ -476,7 +499,7 @@ public class PlayerController : Agent
         //{
         //    AddVectorObs(3);
         //}
-        AddVectorObs(blinkyDistance);
+        //AddVectorObs(blinkyDistance);
 
     }
 
@@ -577,7 +600,7 @@ public class PlayerController : Agent
         {
             AddReward(scoreReward(currentScore, prevScore));
             //reward to stay alive
-            AddReward(0.05f);
+            AddReward(0.2f);
             AddReward(distanceFromGhostReward());
             AddReward(distanceToPackDotReward());
         }

@@ -101,7 +101,7 @@ public class PathFinder
         visited.Add(src);
         src.prev = null;
         src.level = 0;
-
+        //
         while (queue.Count != 0 && queue.Peek().level < k)
         {
             GraphNode node = queue.Dequeue();
@@ -111,9 +111,11 @@ public class PathFinder
             {
                 if (!visited.Contains(n))
                 {
-                    queue.Enqueue(n);
+                    
                     n.level = node.level + 1;
                     n.prev = node;
+                        queue.Enqueue(n);
+
                 }
             }
         }

@@ -55,8 +55,16 @@ public class MazeGraph
             int j = (int)pacdot.transform.position.y;
             graph2[i, j] = 1;
         }
+        //for (int i = 0; i < graph2.GetLength(0); i++)
+        //{
+        //    for (int j = 0; j < graph2.GetLength(1); j++)
+        //    {
+        //        System.Diagnostics.Debug.Write(graph2[i,j]);
+        //    }
+        //    System.Diagnostics.Debug.WriteLine("");
+        //}
 
-        for (int i = 1; i < graph2.GetLength(0) - 1; i++)
+                for (int i = 1; i < graph2.GetLength(0) - 1; i++)
         {
             for (int j = 1; j < graph2.GetLength(1) - 1; j++)
             {
@@ -142,5 +150,10 @@ public class MazeGraph
             UnityEngine.Debug.DrawLine(curVector, prevVector, color, duration, true);
         }
     }
+
+    //private int totalPacdotNodes()
+    //{
+
+    //}
 
 }

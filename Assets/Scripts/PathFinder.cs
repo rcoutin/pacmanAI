@@ -8,8 +8,8 @@ public class PathFinder
         List<GraphNode> path = new List<GraphNode>();
         while (node.prev != null)
         {
-            node = node.prev;
             path.Add(node);
+            node = node.prev;
         }
         return path;
     }
@@ -41,8 +41,8 @@ public class PathFinder
             {
                 if (!visited.Contains(n))
                 {
+                    n.prev = node; 
                     queue.Enqueue(n);
-                    n.prev = node;
                 }
             }            
         }
@@ -69,7 +69,6 @@ public class PathFinder
             visited.Add(node);
             if (node.isPacDot)
             {
-                //path.Add(node);
                 return buildPathFromPrevs(node);
                
             }
@@ -77,8 +76,8 @@ public class PathFinder
             {
                 if (!visited.Contains(n))
                 {
-                    queue.Enqueue(n);
                     n.prev = node;
+                    queue.Enqueue(n);
                 }
             }
         }
@@ -114,7 +113,7 @@ public class PathFinder
                     
                     n.level = node.level + 1;
                     n.prev = node;
-                        queue.Enqueue(n);
+                    queue.Enqueue(n);
 
                 }
             }

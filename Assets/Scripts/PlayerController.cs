@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 public class PlayerController : Agent
 {
-    private bool debugEnabled = true;
+    public bool debugEnabled;
     public float speed = 0.4f;
     Vector2 _dest = Vector2.zero;
     Vector2 _dir = Vector2.zero;
@@ -117,6 +117,8 @@ public class PlayerController : Agent
     // Update is called once per frame
     void FixedUpdate()
     {
+       
+
         switch (GameManager.gameState)
         {
             case GameManager.GameState.Game:
@@ -177,50 +179,50 @@ public class PlayerController : Agent
         {
            
             GraphNode next = path[path.Count - 2];
-            int dir = -1;
+            int neighbourPos = -1;
             //PrintLog(string.Join(", ",new int[] { x, y, next.x, next.y }));
-            if (next.x > x) dir = 1;
-            else if (next.x < x) dir = 0;
-            else if (next.y > y) dir = 2;
-            else if (next.y < y) dir = 3;
-            if (dir == -1) continue;
+            if (next.x > x) neighbourPos = 1;
+            else if (next.x < x) neighbourPos = 0;
+            else if (next.y > y) neighbourPos = 2;
+            else if (next.y < y) neighbourPos = 3;
+            //if (neighbourPos == -1) continue;
 
             for (int i=0;i<path.Count-1;i++)
             {
                 if (isGhost(path[i]))
                 {
                     float cur = i;
-                    
+
                     float safety = 1 - (cur / 10);
-                    float existingSafety = dirState[dir][0];
-                    if ( safety < existingSafety)
+                    float existingSafety = dirState[neighbourPos][0];
+                    if (safety < existingSafety)
                     {
-                        dirState[dir][0] = safety;
+                        dirState[neighbourPos][0] = safety;
                     }
                 }
                 if (path[i].isPacDot)
                 {
-                    dirState[dir][1] += 0.1f;
+                    dirState[neighbourPos][1] += 0.1f;
                 }
                 if (path[i].isPowerUp)
                 {
-                    dirState[dir][2] += 0.5f;
+                    dirState[neighbourPos][2] += 0.0f;
                 }
             }
 
-            bool currentDirHasPacdots = dirState[dir][1] > 0;
+            bool currentDirHasPacdots = dirState[neighbourPos][1] > 0;
             if (!currentDirHasPacdots && pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
             {
                 GraphNode nextNodeInPacdotPath = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
-                dirState[dir][1] += 0.2f;
+                dirState[neighbourPos][1] += 0.2f;
             }
-            if (dirState[dir][0] < 1)
+            if (dirState[neighbourPos][0] < 1)
             {
                 colorIndex = 0; // low safety
             }
             else
             {
-                if(dirState[dir][1] > 2)
+                if(dirState[neighbourPos][1] > 2)
                 {
                     colorIndex = 2;
                 }
@@ -278,7 +280,8 @@ public class PlayerController : Agent
         if (current == null) return null;
         current.isPacDot = false;
         List<GraphNode> path = PathFinder.findPathToClosestPacdot(current);
-        PrintLog(path.Count);
+        if (path == null || path.Count > 1) return null;
+        //PrintLog(path.Count);
         MazeGraph.drawPathLines(path,Color.magenta,3f);
         pathToClosestPacdot = path;
         nearestPacdotDistance = path.Count;
@@ -466,6 +469,15 @@ public class PlayerController : Agent
     public override void CollectObservations()
     {
         setActionMask();
+        Monitor.Log("safety_left", currentState[0][0]);
+        Monitor.Log("safety_right", currentState[1][0]);
+        Monitor.Log("safety_up", currentState[2][0]);
+        Monitor.Log("safety_down", currentState[3][0]);
+        Monitor.Log("food_left", currentState[0][1]);
+        Monitor.Log("food_right", currentState[1][1]);
+        Monitor.Log("food_up", currentState[2][1]);
+        Monitor.Log("food_down", currentState[3][1]);
+
         if (currentState != null)
         {
             AddVectorObs(currentState[0]);
@@ -538,10 +550,20 @@ public class PlayerController : Agent
 
     public void agentMove(float[] action)
     {
-        if (action[0] == 2) _nextDir = Vector2.right;
-        if (action[0] == 1) _nextDir = -Vector2.right;
-        if (action[1] == 1) _nextDir = Vector2.up;
-        if (action[1] == 2) _nextDir = -Vector2.up;
+
+        if (action[0] == 2) {
+            Monitor.Log("dir", "right");
+            _nextDir = Vector2.right;}
+        if (action[0] == 1) {
+            Monitor.Log("dir", "left");
+            _nextDir = -Vector2.right;}
+        if (action[1] == 1)
+        {
+            Monitor.Log("dir", "up");
+            _nextDir = Vector2.up;}
+        if (action[1] == 2) {
+            Monitor.Log("dir", "down");
+            _nextDir = -Vector2.up; }
     }
 
     public float distanceToPackDotReward()
@@ -598,11 +620,13 @@ public class PlayerController : Agent
         }
         else
         {
-            AddReward(scoreReward(currentScore, prevScore));
+            float sr = scoreReward(currentScore, prevScore);
+            Monitor.Log("Score_Reward, Staying Alive", sr);
+            AddReward(sr);
             //reward to stay alive
-            AddReward(0.2f);
-            AddReward(distanceFromGhostReward());
-            AddReward(distanceToPackDotReward());
+            AddReward(0.1f);
+           // AddReward(distanceFromGhostReward());
+           // AddReward(distanceToPackDotReward());
         }
         prevScore = currentScore;
     }

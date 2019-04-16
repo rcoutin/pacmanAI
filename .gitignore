@@ -17,10 +17,10 @@
 # /Assets/Music/Stripes - Pinwheel.*
 *
 !*/
-!Assets/
+!Assets/**
 /Assets/ML-Agents/Plugins/iOS/libtensorflow-core.a
 /Assets/ML-Agents/Plugins/Computer/libtensorflow.bundle
 /Assets/Music/Stripes - Pinwheel.*
-
+!.gitignore
 #Unity3D Generated File On Crash Reports
 sysinfo.txt

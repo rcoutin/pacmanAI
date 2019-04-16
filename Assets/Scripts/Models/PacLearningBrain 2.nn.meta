@@ -1,8 +1,8 @@
 fileFormatVersion: 2
-guid: 6bbf2612817f4114ca21714eb0915a88
+guid: e86cc223dd5a7c34784374fdc398c3c5
 ScriptedImporter:
   fileIDToRecycleName:
-    11400000: Assets/Scripts/PacLearningBrain.nn
+    11400000: Assets/Scripts/Models/PacLearningBrain 2.nn
   externalObjects: {}
   userData: 
   assetBundleName: 

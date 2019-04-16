@@ -139,7 +139,7 @@ public class MazeGraph
             GraphNode prevNode = path[i - 1];
             Vector2 curVector = new Vector2(curNode.x, curNode.y);
             Vector2 prevVector = new Vector2(prevNode.x, prevNode.y);
-            UnityEngine.Debug.DrawLine(curVector, prevVector, color, duration, false);
+            UnityEngine.Debug.DrawLine(curVector, prevVector, color, duration, true);
         }
     }
 

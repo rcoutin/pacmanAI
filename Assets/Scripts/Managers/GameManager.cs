@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour {
     private GameObject inky;
     private GameObject clyde;
     private GameGUINavigation gui;
-
+    public bool death;
 	public static bool scared;
     static public int score;
 
@@ -128,11 +128,11 @@ public class GameManager : MonoBehaviour {
 
 	public void ToggleScare()
 	{
-		if(!scared)	ScareGhosts();
-		else 		CalmGhosts();
-	}
+        if (!scared) ScareGhosts();
+        else CalmGhosts();
+    }
 
-	public void ScareGhosts()
+    public void ScareGhosts()
 	{
 		scared = true;
 		blinky?.GetComponent<GhostMove>().Frighten();
@@ -174,6 +174,7 @@ public class GameManager : MonoBehaviour {
 
     public void LoseLife()
     {
+        if (!death) return;
         lives--;
         gameState = GameState.Dead;
     

@@ -165,7 +165,7 @@ public class PlayerController : Agent
         //initialize
         for (int i = 0; i < 4; i++)
         {
-            dirState.Add(i,new float[] { 1, 0, 0 });
+            dirState.Add(i,new float[] { 0, 0, 0 });
         }
         GraphNode current = graph.GetNode(transform);
       
@@ -186,18 +186,18 @@ public class PlayerController : Agent
             else if (next.y > y) neighbourPos = 2;
             else if (next.y < y) neighbourPos = 3;
             //if (neighbourPos == -1) continue;
-
+            //direction is valid, set default value for safety as 1
             for (int i=0;i<path.Count-1;i++)
             {
                 if (isGhost(path[i]))
                 {
                     float cur = i;
 
-                    float safety = 1 - (cur / 10);
-                    float existingSafety = dirState[neighbourPos][0];
-                    if (safety < existingSafety)
+                    float danger = (cur / 10);
+                    float existingDanger = dirState[neighbourPos][0];
+                    if (danger > existingDanger)
                     {
-                        dirState[neighbourPos][0] = safety;
+                        dirState[neighbourPos][0] = danger;
                     }
                 }
                 if (path[i].isPacDot)
@@ -216,9 +216,9 @@ public class PlayerController : Agent
                 GraphNode nextNodeInPacdotPath = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
                 dirState[neighbourPos][1] += 0.2f;
             }
-            if (dirState[neighbourPos][0] < 1)
+            if (dirState[neighbourPos][0] > 0)
             {
-                colorIndex = 0; // low safety
+                colorIndex = 0; // high danger
             }
             else
             {
@@ -464,15 +464,26 @@ public class PlayerController : Agent
         Boolean cantGoUp = !Valid(Vector2.up), cantGoDown = !Valid(Vector2.down);
         size += cantGoUp ? 1 : 0; size += cantGoDown ? 1 : 0;
         if (size > 0) SetActionMask(1, size == 2 ? new int[] { 1, 2 } : new int[] { cantGoUp ? 1 : 2 });
+
+        //update state danger default values based on the mask
+
+        if (currentState != null)
+        {
+            if (cantGoLeft) currentState[0][0] = 1;
+            if (cantGoRight) currentState[1][0] = 1;
+            if (cantGoUp) currentState[2][0] = 1;
+            if (cantGoDown) currentState[3][0] = 1;
+        }
+
     }
 
     public override void CollectObservations()
     {
         setActionMask();
-        Monitor.Log("safety_left", currentState[0][0]);
-        Monitor.Log("safety_right", currentState[1][0]);
-        Monitor.Log("safety_up", currentState[2][0]);
-        Monitor.Log("safety_down", currentState[3][0]);
+        Monitor.Log("danger_left", currentState[0][0]);
+        Monitor.Log("danger_right", currentState[1][0]);
+        Monitor.Log("danger_up", currentState[2][0]);
+        Monitor.Log("danger_down", currentState[3][0]);
         Monitor.Log("food_left", currentState[0][1]);
         Monitor.Log("food_right", currentState[1][1]);
         Monitor.Log("food_up", currentState[2][1]);

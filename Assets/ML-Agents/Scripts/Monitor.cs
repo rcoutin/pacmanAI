@@ -162,15 +162,9 @@ namespace MLAgents
             if (target == null)
             {
                 target = canvas.transform;
-                System.Diagnostics.Debug.WriteLine("QUAZA WAZA");
-
-                System.Diagnostics.Debug.WriteLine(canvas.transform);
+               
             }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("JABULAZA");
 
-            }
 
             transformCamera[target] = camera;
 

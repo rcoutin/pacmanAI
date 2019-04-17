@@ -21,7 +21,7 @@ public class GameManager : MonoBehaviour {
     public bool death;
 	public static bool scared;
     static public int score;
-
+    public bool powerUpActive;
 	public float scareLength;
 	private float _timeToCalm;
 

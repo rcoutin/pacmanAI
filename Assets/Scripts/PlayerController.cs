@@ -12,15 +12,16 @@ public class PlayerController : Agent
     public float STAY_ALIVE_RW = 0.1f;
     public float SCORE_POS_RW = 0.25f;
     public float SCORE_NEG_RW = -0.001f;
-
+    private float chaseTimer = 0.0f;
     public float PACDOT_DIR_SCORE = 0.1f;
     public float DANGER_MULT = 0.1f;
     public float POWERUP_DIR_SCORE = 0.0f;
-
+    public bool refreshDirection;
     private String[] dirNames = new String[] { "Left", "Right", "Up", "Down" };
     public bool debugEnabled;
     public bool drawExpandedPaths;
     public bool drawPathToNearestPacdot;
+    public bool followCalculatedPath;
     public float speed = 0.2f;
     Vector2 _dest = Vector2.zero;
     Vector2 _dir = Vector2.zero;
@@ -115,28 +116,28 @@ public class PlayerController : Agent
             currentPacman.isPowerUp = false;
         }
         updateDirectionStates();
-        //int neighbourPos = -1;
-        ////Make pacman prioritize direction to closest pacdot incase there are no pacdots k nodes away
-        //if ( pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
-        //{
-        //    GraphNode current = graph.GetNode(transform);
-        //    int x = current.x;
-        //    int y = current.y;
-        //    GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 2];
-        //    if (next.x > x) neighbourPos = 1;
-        //    else if (next.x < x) neighbourPos = 0;
-        //    else if (next.y > y) neighbourPos = 2;
-        //    else if (next.y < y) neighbourPos = 3;
-            
-        //    if(neighbourPos !=-1) currentState[neighbourPos][1] = 1.0f;
-        //    Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
-        //}
+        int neighbourPos = -1;
+       // Make pacman prioritize direction to closest pacdot incase there are no pacdots k nodes away
+        if (drawPathToNearestPacdot && pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
+        {
+            GraphNode current = graph.GetNode(transform);
+            int x = current.x;
+            int y = current.y;
+            GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 2];
+            if (next.x > x) neighbourPos = 1;
+            else if (next.x < x) neighbourPos = 0;
+            else if (next.y > y) neighbourPos = 2;
+            else if (next.y < y) neighbourPos = 3;
+
+            if (neighbourPos != -1) currentState[neighbourPos][1] = 0.2f;
+            Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
+        }
 
         findNearestPacdot(); // this assigns to float nearestPacdotLength and List<GraphNode> pathToNearestPacDot
 
         RequestDecision(); // On Demand Decisions = True
 
-        followpath();
+        if(followCalculatedPath) followpath();
     }
 
     private void updateGhostDistances()
@@ -250,13 +251,13 @@ public class PlayerController : Agent
             }
 
 
-            bool currentDirHasPacdots = dirState[neighbourPos][1] > 0;
-            if (!currentDirHasPacdots && pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
-            {
-                GraphNode nextNodeInPacdotPath = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
-                dirState[neighbourPos][1] += 0.2f;
-                Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
-            }
+            //bool currentDirHasPacdots = dirState[neighbourPos][1] > 0;
+            //if (drawPathToNearestPacdot && !currentDirHasPacdots && pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
+            //{
+            //    GraphNode nextNodeInPacdotPath = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
+            //    dirState[neighbourPos][1] += 0.2f;
+            //    Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
+            //}
             if (dirState[neighbourPos][0] > 0)
             {
                 colorIndex = 0; // high danger
@@ -273,10 +274,6 @@ public class PlayerController : Agent
 
                 }
             }
-            //if(dirState[dir][1] > 2.4 && dirState[dir][0] > 0) // some pacdots and slightly safe
-            //{
-            //    colorIndex = 2;
-            //}
             if(drawExpandedPaths) MazeGraph.drawPathLines(path, colors[colorIndex] , 0.3f);
             //PrintLog("PathColor " + colorNames[colorIndex] + string.Join("-", dirState[dir]));
 
@@ -289,10 +286,15 @@ public class PlayerController : Agent
             {
                 dirState[i][1] /= numPaths[i];
                 dirState[i][0] /= numPaths[i];
+                dirState[i][2] /= numPaths[i];
 
             }
         }
         currentState = dirState;
+        Monitor.Log("food_left", currentState[0][1]);
+        Monitor.Log("food_right", currentState[1][1]);
+        Monitor.Log("food_up", currentState[2][1]);
+        Monitor.Log("food_down", currentState[3][1]);
     }
 
 
@@ -300,7 +302,6 @@ public class PlayerController : Agent
     {
         int x = node.x;
         int y = node.y;
-
         if ((x == (int)blinky.transform.position.x) && (y == (int)blinky.transform.position.y))
         {
             return true;
@@ -374,17 +375,19 @@ public class PlayerController : Agent
         //}
 
         float max = float.MinValue;
-        int direction = 0;
-        if (pathToClosestPacdot != null && pathToClosestPacdot.Count > 0) {
-            GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
-            if (next.x > transform.position.x) direction = 1;
-            else if (next.x < transform.position.x) direction = 0;
-            else if (next.y > transform.position.y) direction = 2;
-            else if (next.y < transform.position.y) direction = 3;
-        }
+        int direction = -1;
+        //if (pathToClosestPacdot != null && pathToClosestPacdot.Count > 0) {
+        //    GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
+        //    if (next.x > transform.position.x) direction = 1;
+        //    else if (next.x < transform.position.x) direction = 0;
+        //    else if (next.y > transform.position.y) direction = 2;
+        //    else if (next.y < transform.position.y) direction = 3;
+        //}
         foreach (int key in currentState.Keys)
         {
-            float value = -5*currentState[key][0] + 2*currentState[key][1] + 2*currentState[key][2];
+            
+
+            float value = (GameManager.scared? 6:-6)*currentState[key][0] + 3*currentState[key][1] + 3*currentState[key][2];
             if (value > max)
             {
                 max = value;
@@ -563,10 +566,10 @@ public class PlayerController : Agent
         //Monitor.Log("danger_right", currentState[1][0]);
         //Monitor.Log("danger_up", currentState[2][0]);
         //Monitor.Log("danger_down", currentState[3][0]);
-        Monitor.Log("food_left", currentState[0][1]);
-        Monitor.Log("food_right", currentState[1][1]);
-        Monitor.Log("food_up", currentState[2][1]);
-        Monitor.Log("food_down", currentState[3][1]);
+        //Monitor.Log("food_left", currentState[0][1]);
+        //Monitor.Log("food_right", currentState[1][1]);
+        //Monitor.Log("food_up", currentState[2][1]);
+        //Monitor.Log("food_down", currentState[3][1]);
 
         if (currentState != null)
         {

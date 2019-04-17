@@ -8,11 +8,20 @@ using UnityEngine.SceneManagement;
 
 public class PlayerController : Agent
 {
+
+    public float STAY_ALIVE_RW = 0.1f;
+    public float SCORE_POS_RW = 0.25f;
+    public float SCORE_NEG_RW = -0.001f;
+
+    public float PACDOT_DIR_SCORE = 0.1f;
+    public float DANGER_MULT = 0.1f;
+    public float POWERUP_DIR_SCORE = 0.0f;
+
     private String[] dirNames = new String[] { "Left", "Right", "Up", "Down" };
     public bool debugEnabled;
     public bool drawExpandedPaths;
     public bool drawPathToNearestPacdot;
-    public float speed = 0.4f;
+    public float speed = 0.2f;
     Vector2 _dest = Vector2.zero;
     Vector2 _dir = Vector2.zero;
     Vector2 _nextDir = Vector2.zero;
@@ -106,22 +115,22 @@ public class PlayerController : Agent
             currentPacman.isPowerUp = false;
         }
         updateDirectionStates();
-        int neighbourPos = -1;
-        //Make pacman prioritize direction to closest pacdot incase there are no pacdots k nodes away
-        if ( pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
-        {
-            GraphNode current = graph.GetNode(transform);
-            int x = current.x;
-            int y = current.y;
-            GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 2];
-            if (next.x > x) neighbourPos = 1;
-            else if (next.x < x) neighbourPos = 0;
-            else if (next.y > y) neighbourPos = 2;
-            else if (next.y < y) neighbourPos = 3;
+        //int neighbourPos = -1;
+        ////Make pacman prioritize direction to closest pacdot incase there are no pacdots k nodes away
+        //if ( pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
+        //{
+        //    GraphNode current = graph.GetNode(transform);
+        //    int x = current.x;
+        //    int y = current.y;
+        //    GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 2];
+        //    if (next.x > x) neighbourPos = 1;
+        //    else if (next.x < x) neighbourPos = 0;
+        //    else if (next.y > y) neighbourPos = 2;
+        //    else if (next.y < y) neighbourPos = 3;
             
-            currentState[neighbourPos][1] = 1.0f;
-            Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
-        }
+        //    if(neighbourPos !=-1) currentState[neighbourPos][1] = 1.0f;
+        //    Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
+        //}
 
         findNearestPacdot(); // this assigns to float nearestPacdotLength and List<GraphNode pathToNearestPacDot
 
@@ -216,7 +225,7 @@ public class PlayerController : Agent
                 if (isGhost(path[i]))
                 {
                     float cur = i;
-                    float danger = (cur / 10);
+                    float danger = (cur*DANGER_MULT);
                     float existingDanger = dirState[neighbourPos][0];
                     if (danger > existingDanger)
                     {
@@ -225,11 +234,11 @@ public class PlayerController : Agent
                 }
                 if (path[i].isPacDot)
                 {
-                    dirState[neighbourPos][1] += 0.1f;
+                    dirState[neighbourPos][1] =Math.Min(1,PACDOT_DIR_SCORE+ dirState[neighbourPos][1]);
                 }
                 if (path[i].isPowerUp)
                 {
-                    dirState[neighbourPos][2] += 0.0f;
+                    dirState[neighbourPos][2] += POWERUP_DIR_SCORE;
                 }
             }
 
@@ -425,18 +434,6 @@ public class PlayerController : Agent
 
     }
 
-    //void CheckSurroundingWalls()
-    //{
-    //    //PrintLog("Pacman direction" + _dir);
-    //    //PrintLog("Start - Checking walls");
-    //    //if (IsColliderNearby(Vector2.right, Color.green)) PrintLog("can't move right");
-    //    //if (IsColliderNearby(-Vector2.right, Color.red)) PrintLog("can't move left");
-    //    //if (IsColliderNearby(Vector2.up, Color.blue)) PrintLog("Can't move up");
-    //    //if (IsColliderNearby(-Vector2.up, Color.yellow)) PrintLog("Can't move down");
-        
-    //    //PrintLog("Done - checking walls");
-    //}
-
     private void validateAndChangeDir()
     {
         // if pacman is in the center of a tile
@@ -529,7 +526,7 @@ public class PlayerController : Agent
             AddVectorObs(new float[] { 0, 0, 0 });
             AddVectorObs(new float[] { 0, 0, 0 });
         }
-        //AddVectorObs(nearestPacdotDistance);
+        //AddVectorObs(pathToClosestPacdot == null ? 0 : pathToClosestPacdot.Count);
         //AddVectorObs(_dir);
         //AddVectorObs(blinkyDistance);
 
@@ -588,7 +585,7 @@ public class PlayerController : Agent
 
     public float distanceToPackDotReward()
     {
-        float distanceToPacdot = nearestPacdotDistance;
+        float distanceToPacdot = pathToClosestPacdot==null?0:pathToClosestPacdot.Count;
         if (distanceToPacdot >= 5)
         {
             return -0.08f;
@@ -607,8 +604,8 @@ public class PlayerController : Agent
 
     private float scoreReward(float curScore,float prevScore)
     {
-        if (curScore - prevScore > 0) return 0.25f;
-        return -0.001f;
+        if (curScore - prevScore > 0) return SCORE_POS_RW;
+        return SCORE_NEG_RW;
     }
     private float distanceFromGhostReward()
     {
@@ -645,9 +642,9 @@ public class PlayerController : Agent
             Monitor.Log("Staying Alive", 0.1f);
             AddReward(sr);
             //reward to stay alive
-            AddReward(0.1f);
+            AddReward(STAY_ALIVE_RW);
            // AddReward(distanceFromGhostReward());
-           // AddReward(distanceToPackDotReward());
+            //AddReward(distanceToPackDotReward());
         }
         prevScore = currentScore;
     }

@@ -62,7 +62,7 @@ public class PlayerAcademy : Academy
     public override void InitializeAcademy()
     {
         Monitor.SetActive(true);
-        System.Diagnostics.Debug.WriteLine("Acamdemy Initialized()");
+        System.Diagnostics.Debug.WriteLine("Academy Initialized()");
     }
 
     public override void AcademyStep()

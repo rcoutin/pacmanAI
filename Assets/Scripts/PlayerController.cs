@@ -132,11 +132,11 @@ public class PlayerController : Agent
         //    Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
         //}
 
-        findNearestPacdot(); // this assigns to float nearestPacdotLength and List<GraphNode pathToNearestPacDot
+        findNearestPacdot(); // this assigns to float nearestPacdotLength and List<GraphNode> pathToNearestPacDot
 
         RequestDecision(); // On Demand Decisions = True
 
-
+        followpath();
     }
 
     private void updateGhostDistances()
@@ -186,6 +186,7 @@ public class PlayerController : Agent
     //    return minDist;
     //}
 
+    
 
     private void updateDirectionStates()
     {
@@ -205,7 +206,7 @@ public class PlayerController : Agent
         if (current == null) return;
         int x = current.x;
         int y = current.y;
-        List<List<GraphNode>> pathList = PathFinder.expand(current, 12);
+        List<List<GraphNode>> pathList = PathFinder.expand(current, 10);
         
        
         foreach (List<GraphNode> path in pathList)
@@ -274,6 +275,8 @@ public class PlayerController : Agent
 
         }
         // adding default values for unassigned directions
+
+        
        
         currentState = dirState;
     }
@@ -325,36 +328,69 @@ public class PlayerController : Agent
 
     public void followpath()
     {
-        int x = (int)transform.position.x;
-        int y = (int)transform.position.y;
-        //needs to be reimplemented.
-        GraphNode next = null;
-        
-        //if (x == next.x && y == next.y)
+        //int x = (int)transform.position.x;
+        //int y = (int)transform.position.y;
+        ////needs to be reimplemented.
+        //GraphNode next = null;
+
+        ////if (x == next.x && y == next.y)
+        ////{
+        ////    next.isPacDot = false;
+        ////}
+
+        //if (next.x > x)
         //{
-        //    next.isPacDot = false;
+        //    _nextDir = Vector2.right;
+        //}
+        //else if (next.x < x)
+        //{
+        //    _nextDir = Vector2.left;
+        //}
+        //else if (next.y > y)
+        //{
+        //    _nextDir = Vector2.up;
+        //}
+        //else if (next.y < y)
+        //{
+        //    _nextDir = Vector2.down;
+        //}
+        //else
+        //{
+        //    _nextDir = Vector2.right;
         //}
 
-        if (next.x > x)
+        float max = float.MinValue;
+        int direction = 0;
+        foreach (int key in currentState.Keys)
         {
-            _nextDir = Vector2.right;
+            float value = -5*currentState[key][0] + currentState[key][1] + currentState[key][2];
+            if (value > max)
+            {
+                max = value;
+                direction = key;
+
+            }
         }
-        else if (next.x < x)
+
+        switch (direction)
         {
-            _nextDir = Vector2.left;
+            case 1:
+                _nextDir = Vector2.right;
+                break;
+
+            case 0:
+                _nextDir = Vector2.left;
+                break;
+
+            case 2:
+                _nextDir = Vector2.up;
+                break;
+
+            case 3:
+                _nextDir = Vector2.down;
+                break;
         }
-        else if (next.y > y)
-        {
-            _nextDir = Vector2.up;
-        }
-        else if (next.y < y)
-        {
-            _nextDir = Vector2.down;
-        }
-        else
-        {
-            _nextDir = Vector2.right;
-        }
+
     }
 
 
@@ -413,8 +449,9 @@ public class PlayerController : Agent
         // get the next direction from keyboard
         //agentMove()
         // if pacman is in the center of a tile
-        //followpath();
+
         validateAndChangeDir();
+
     }
 
     bool IsColliderNearby(Vector2 direction)

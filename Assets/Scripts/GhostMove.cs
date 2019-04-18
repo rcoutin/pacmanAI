@@ -39,8 +39,8 @@ public class GhostMove : MonoBehaviour {
 	private float timeToEndScatter;
 	private float timeToEndWait;
 
-	enum State { Wait, Init, Scatter, Chase, Run };
-	State state;
+	public enum State { Wait, Init, Scatter, Chase, Run };
+	public State state;
 
     private Vector3 _startPos;
     private float _timeToWhite;

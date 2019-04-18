@@ -16,10 +16,15 @@ public class PlayerController : Agent
     public float PACDOT_DIR_SCORE = 0.1f;
     public float DANGER_MULT = 0.1f;
     public float POWERUP_DIR_SCORE = 0.1f;
-    public float DANGER_WT = -4;
-    public float SCARED_WT = 2;
+    public static float DANGER_WT = -4;
+    public static float SCARED_WT = 2;
     public float PACDOT_WT = 2;
     public float POWERUP_WT = 4;
+    public static float GHOST_WT = DANGER_WT;
+    GameObject clyde_obj;
+    GameObject pinky_obj;
+    GameObject inky_obj;
+    GameObject blinky_obj;
 
     private String[] dirNames = new String[] { "Left", "Right", "Up", "Down" };
     private Vector2[] dirs = new Vector2[] { Vector2.left, Vector2.right, Vector2.up, Vector2.down };
@@ -38,6 +43,7 @@ public class PlayerController : Agent
 
     public Boolean alive;
     private Dictionary<int, float[]> currentState;
+
     public void agent_done()
     {
         PrintLog("Level complete!");
@@ -106,6 +112,11 @@ public class PlayerController : Agent
         SM = GameObject.Find("Game Manager").GetComponent<ScoreManager>();
         GUINav = GameObject.Find("UI Manager").GetComponent<GameGUINavigation>();
         _dest = transform.position;
+        clyde_obj = GameObject.Find("clyde");
+        pinky_obj = GameObject.Find("pinky");
+        inky_obj = GameObject.Find("inky");
+        blinky_obj = GameObject.Find("blinky");
+
         try
         {
             graph = new MazeGraph();
@@ -246,12 +257,12 @@ public class PlayerController : Agent
                 {
                     float cur = i*(i/2);
                     danger = (cur*DANGER_MULT);
-                    float existingDanger = dirState[neighbourPos][0];
-                    if (danger > existingDanger)
-                    {
-                        dirState[neighbourPos][0] = danger;
-                    }
-                    //dirState[neighbourPos][0] = danger;
+                    //float existingDanger = dirState[neighbourPos][0];
+                    //if (danger > existingDanger)
+                    //{
+                    //    dirState[neighbourPos][0] = danger;
+                    //}
+                    dirState[neighbourPos][0] += GHOST_WT * danger;
                 }
                 //dirState[neighbourPos][0] = ((numPaths[neighbourPos] - 1) * dirState[neighbourPos][0] + danger) / numPaths[neighbourPos];
                 if (path[i].isPacDot)
@@ -313,24 +324,30 @@ public class PlayerController : Agent
     }
 
 
+
+
     private bool isGhost(GraphNode node)
     {
         int x = node.x;
         int y = node.y;
         if ((x == (int)blinky.transform.position.x) && (y == (int)blinky.transform.position.y))
         {
+            GHOST_WT = blinky_obj.GetComponent<GhostMove>().state != GhostMove.State.Run? DANGER_WT : SCARED_WT;
             return true;
         }
         if ((x == (int)inky.transform.position.x) && (y == (int)inky.transform.position.y))
         {
+            GHOST_WT = inky_obj.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
             return true;
         }
         if ((x == (int)pinky.transform.position.x) && (y == (int)pinky.transform.position.y))
         {
+            GHOST_WT = pinky_obj.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
             return true;
         }
         if ((x == (int)clyde.transform.position.x) && (y == (int)clyde.transform.position.y))
         {
+            GHOST_WT = clyde_obj.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
             return true;
         }
 
@@ -402,7 +419,7 @@ public class PlayerController : Agent
         foreach (int key in currentState.Keys)
         {
             
-            float value = (GameManager.scared? SCARED_WT:DANGER_WT)*currentState[key][0] + PACDOT_WT*currentState[key][1] + POWERUP_WT*currentState[key][2];
+            float value = currentState[key][0] + PACDOT_WT*currentState[key][1] + POWERUP_WT*currentState[key][2];
             if (value > max)
             {
                 if (Valid(dirs[key])) {

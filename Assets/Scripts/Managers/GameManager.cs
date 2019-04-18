@@ -12,11 +12,11 @@ public class GameManager : MonoBehaviour {
 	public enum GameState { Init, Game, Dead, Scores }
 	public static GameState gameState;
 
-    private GameObject pacman;
-    private GameObject blinky;
-    private GameObject pinky;
-    private GameObject inky;
-    private GameObject clyde;
+    public GameObject pacman;
+    public GameObject blinky;
+    public GameObject pinky;
+    public GameObject inky;
+    public GameObject clyde;
     private GameGUINavigation gui;
     public bool death;
 	public static bool scared;

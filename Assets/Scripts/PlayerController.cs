@@ -15,9 +15,14 @@ public class PlayerController : Agent
     private float chaseTimer = 0.0f;
     public float PACDOT_DIR_SCORE = 0.1f;
     public float DANGER_MULT = 0.1f;
-    public float POWERUP_DIR_SCORE = 0.0f;
-    public bool refreshDirection;
+    public float POWERUP_DIR_SCORE = 0.1f;
+    public float DANGER_WT = -4;
+    public float SCARED_WT = 2;
+    public float PACDOT_WT = 2;
+    public float POWERUP_WT = 4;
+
     private String[] dirNames = new String[] { "Left", "Right", "Up", "Down" };
+    private Vector2[] dirs = new Vector2[] { Vector2.left, Vector2.right, Vector2.up, Vector2.down };
     public bool debugEnabled;
     public bool drawExpandedPaths;
     public bool drawPathToNearestPacdot;
@@ -48,6 +53,15 @@ public class PlayerController : Agent
        // GameManager.score = 0;
         GM.OnLevelWasLoaded();
         GM.ResetScene();
+        try
+        {
+            graph = new MazeGraph();
+        }
+        catch (Exception e)
+        {
+            System.Diagnostics.Debug.Print(e.Message);
+            System.Diagnostics.Debug.Print(e.StackTrace);
+        }
     }
 
     public int prevScore;
@@ -115,25 +129,26 @@ public class PlayerController : Agent
             currentPacman.isPacDot = false;
             currentPacman.isPowerUp = false;
         }
+        findNearestPacdot();
         updateDirectionStates();
         int neighbourPos = -1;
        // Make pacman prioritize direction to closest pacdot incase there are no pacdots k nodes away
-        if (drawPathToNearestPacdot && pathToClosestPacdot != null && pathToClosestPacdot.Count > 1)
+        if (drawPathToNearestPacdot && pathToClosestPacdot != null && pathToClosestPacdot.Count > 0)
         {
             GraphNode current = graph.GetNode(transform);
             int x = current.x;
             int y = current.y;
-            GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 2];
+            GraphNode next = pathToClosestPacdot[pathToClosestPacdot.Count - 1];
             if (next.x > x) neighbourPos = 1;
             else if (next.x < x) neighbourPos = 0;
             else if (next.y > y) neighbourPos = 2;
             else if (next.y < y) neighbourPos = 3;
 
-            if (neighbourPos != -1) currentState[neighbourPos][1] = 0.2f;
+            if (neighbourPos != -1) currentState[neighbourPos][1] = 0.7f;
             Monitor.Log("DirToNearestPac", dirNames[neighbourPos]);
         }
 
-        findNearestPacdot(); // this assigns to float nearestPacdotLength and List<GraphNode> pathToNearestPacDot
+        // this assigns to float nearestPacdotLength and List<GraphNode> pathToNearestPacDot
 
         RequestDecision(); // On Demand Decisions = True
 
@@ -229,24 +244,24 @@ public class PlayerController : Agent
                 float danger = 0;
                 if (isGhost(path[i]))
                 {
-                    float cur = i;
+                    float cur = i*(i/2);
                     danger = (cur*DANGER_MULT);
-                    //float existingDanger = dirState[neighbourPos][0];
-                    //if (danger > existingDanger)
-                    //{
-                    //    dirState[neighbourPos][0] = danger;
-                    //}
-                    dirState[neighbourPos][0] += danger;
+                    float existingDanger = dirState[neighbourPos][0];
+                    if (danger > existingDanger)
+                    {
+                        dirState[neighbourPos][0] = danger;
+                    }
+                    //dirState[neighbourPos][0] = danger;
                 }
                 //dirState[neighbourPos][0] = ((numPaths[neighbourPos] - 1) * dirState[neighbourPos][0] + danger) / numPaths[neighbourPos];
                 if (path[i].isPacDot)
                 {
                     //dirState[neighbourPos][1] =Math.Min(1,PACDOT_DIR_SCORE+ dirState[neighbourPos][1]);
-                    dirState[neighbourPos][1] += PACDOT_DIR_SCORE;
+                    dirState[neighbourPos][1] +=  (i * PACDOT_DIR_SCORE) / path.Count;
                 }
                 if (path[i].isPowerUp)
                 {
-                    dirState[neighbourPos][2] += POWERUP_DIR_SCORE;
+                    dirState[neighbourPos][2] += i* POWERUP_DIR_SCORE;
                 }
             }
 
@@ -284,9 +299,9 @@ public class PlayerController : Agent
         {
             if (numPaths[i] != 0)
             {
+                //dirState[i][0] /= numPaths[i];
                 dirState[i][1] /= numPaths[i];
-                dirState[i][0] /= numPaths[i];
-                dirState[i][2] /= numPaths[i];
+                //dirState[i][2] /= numPaths[i];
 
             }
         }
@@ -383,37 +398,39 @@ public class PlayerController : Agent
         //    else if (next.y > transform.position.y) direction = 2;
         //    else if (next.y < transform.position.y) direction = 3;
         //}
+
         foreach (int key in currentState.Keys)
         {
             
-
-            float value = (GameManager.scared? 6:-6)*currentState[key][0] + 3*currentState[key][1] + 3*currentState[key][2];
+            float value = (GameManager.scared? SCARED_WT:DANGER_WT)*currentState[key][0] + PACDOT_WT*currentState[key][1] + POWERUP_WT*currentState[key][2];
             if (value > max)
             {
-                max = value;
-                direction = key;
+                if (Valid(dirs[key])) {
+                    max = value;
+                    direction = key;
+                }
 
             }
         }
+        _nextDir = dirs[direction];
+        //switch (direction)
+        //{
+        //    case 1:
+        //        _nextDir = Vector2.right;
+        //        break;
 
-        switch (direction)
-        {
-            case 1:
-                _nextDir = Vector2.right;
-                break;
+        //    case 0:
+        //        _nextDir = Vector2.left;
+        //        break;
 
-            case 0:
-                _nextDir = Vector2.left;
-                break;
+        //    case 2:
+        //        _nextDir = Vector2.up;
+        //        break;
 
-            case 2:
-                _nextDir = Vector2.up;
-                break;
-
-            case 3:
-                _nextDir = Vector2.down;
-                break;
-        }
+        //    case 3:
+        //        _nextDir = Vector2.down;
+        //        break;
+        //}
 
     }
 

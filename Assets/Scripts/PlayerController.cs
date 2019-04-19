@@ -40,6 +40,7 @@ public class PlayerController : Agent
     public GameObject destroyThis;
     public GameObject mazeobject;
     private List<GraphNode> pathToClosestPacdot;
+    public bool trainingEnabled;
     public MazeGraph graph;
 
     public Boolean alive;
@@ -120,7 +121,7 @@ public class PlayerController : Agent
 
         try
         {
-            graph = new MazeGraph();
+            graph = trainingEnabled? new TrainingMazeGraph() : new MazeGraph();
         }
         catch (Exception e)
         {
@@ -301,7 +302,8 @@ public class PlayerController : Agent
 
                 }
             }
-            if(drawExpandedPaths) MazeGraph.drawPathLines(path, colors[colorIndex] , 0.3f);
+            if (trainingEnabled && drawExpandedPaths) TrainingMazeGraph.drawPathLines(path, colors[colorIndex], 0.3f);
+            else if (drawExpandedPaths) MazeGraph.drawPathLines(path, colors[colorIndex] , 0.3f);
             //PrintLog("PathColor " + colorNames[colorIndex] + string.Join("-", dirState[dir]));
 
         }

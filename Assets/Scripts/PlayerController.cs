@@ -16,11 +16,12 @@ public class PlayerController : Agent
     public float PACDOT_DIR_SCORE = 0.1f;
     public float DANGER_MULT = 0.1f;
     public float POWERUP_DIR_SCORE = 0.1f;
-    public static float DANGER_WT = -4;
-    public static float SCARED_WT = 2;
+    public float DANGER_WT = -4;
+    public float SCARED_WT = 2;
     public float PACDOT_WT = 2;
     public float POWERUP_WT = 4;
-    public static float GHOST_WT = DANGER_WT;
+    public int PATH_SIZE = 10;
+    public float GHOST_WT = -4;
     GameObject clyde_obj;
     GameObject pinky_obj;
     GameObject inky_obj;
@@ -233,7 +234,7 @@ public class PlayerController : Agent
         if (current == null) return;
         int x = current.x;
         int y = current.y;
-        List<List<GraphNode>> pathList = PathFinder.expand(current, 10);
+        List<List<GraphNode>> pathList = PathFinder.expand(current, PATH_SIZE);
 
         int[] numPaths = new int[4];
         foreach (List<GraphNode> path in pathList)

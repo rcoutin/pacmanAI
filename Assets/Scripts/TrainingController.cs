@@ -4,15 +4,22 @@ using UnityEngine;
 
 public class TrainingController : PlayerController
 {
-    // Start is called before the first frame update
-    void Start()
+
+    public override void CollectObservations()
     {
+        setActionMask();
         
+
+
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void AgentAction(float[] action, string textAction)
     {
-        
+
+
+
+
     }
+
+
 }

@@ -5,37 +5,84 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using MLAgents;
 using UnityEngine.SceneManagement;
+using System.Linq;
+using Random = System.Random;
 
 public class TrainingMazeGraph : MazeGraph
 {
-    private Dictionary<String, GraphNode> graph;
+    //public Dictionary<String, GraphNode> graph;
     int MAX_DIST = 9999;
     int WIDTH = 14;
     int HEIGHT = 12;
 
-    public TrainingMazeGraph()
+    public TrainingMazeGraph() {
+
+
+        //pick a random pacdot 
+    }
+
+    public void destroyPacdotsExceptRandom()
     {
+        Random rand = new Random();
+       
+        List<String> keyList = Enumerable.ToList<String>(graph.Keys);
+
+        String randomKey = keyList[rand.Next(graph.Count)];
+
+        //iterate over all pacdots until this is found and destroy that object
+        GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
+     
+        String[] xy = randomKey.Split(',');
+        int dx = Int32.Parse(xy[0]);
+        int dy = Int32.Parse(xy[1]);
+        if(dx == 13 && dy == 11)
+        {
+            dx = 10;
+        }
+        //PrintLog(dx + "," + dy);
+        foreach (GameObject pacdot in currentPacdots)
+        {
+
+            int px = (int)pacdot.transform.position.x;
+            int py = (int)pacdot.transform.position.y;
+
+
+            if (px != dx || py != dy)
+            {
+                UnityEngine.Object.Destroy(pacdot);
+
+            }
+            else
+            {
+                //PrintLog("Not destroying random node" + dx + "," + dy);
+            }
+        }
+
+                GetNode(dx, dy).isPacDot = true;
+    }
+
+    public override void initGraph()
+    {
+        System.Diagnostics.Debug.Print("initializing training graph");
 
         graph = new Dictionary<String, GraphNode>();
 
         GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
-        System.Diagnostics.Debug.Print(currentPacdots.Length + "");
 
         //foreach (GameObject pacdot in currentPacdots)
         //{
 
-        //    if (pacdot.transform.position.x < WIDTH && pacdot.transform.position.y < HEIGHT)
-        //    {
-        //        if (!ContainsNode(pacdot.transform))
-        //        {
-        //            AddNode(pacdot.transform);
-        //            GetNode(pacdot.transform).isPacDot = false;
-        //        }
-        //    }
-            
-        //}
+        //    int px = (int)pacdot.transform.position.x;
+        //    int py = (int)pacdot.transform.position.y;
 
-//        graph["4,8"].isPowerUp = true;
+
+        //    if (px >= WIDTH || py >=HEIGHT)
+        //    {
+        //        UnityEngine.Object.Destroy(pacdot);
+
+        //    }
+        //}
+        System.Diagnostics.Debug.Print(currentPacdots.Length + "");
 
         int[,] graph2 = new int[WIDTH+2, HEIGHT+2];
         for (int i = 0; i < graph2.GetLength(0); i++)
@@ -54,15 +101,6 @@ public class TrainingMazeGraph : MazeGraph
             if (i < WIDTH && j < HEIGHT)
                 graph2[i, j] = 1;
         }
-        //for (int i = 0; i < graph2.GetLength(0); i++)
-        //{
-        //    for (int j = 0; j < graph2.GetLength(1); j++)
-        //    {
-        //        System.Diagnostics.Debug.Write(graph2[i,j]);
-        //    }
-        //    System.Diagnostics.Debug.WriteLine("");
-        //}
-
         for (int i = 1; i < graph2.GetLength(0) - 1; i++)
         {
             for (int j = 1; j < graph2.GetLength(1) - 1; j++)
@@ -102,17 +140,10 @@ public class TrainingMazeGraph : MazeGraph
                 }
             }
         }
+      destroyPacdotsExceptRandom();
 
     }
-    private String localizedKeyString(Transform transform)
-    {
-        return (int)transform.position.x + "," + (int)transform.position.y;
-    }
 
-    public bool ContainsNode(Transform transform)
-    {
-        return graph.ContainsKey(localizedKeyString(transform));
-    }
 
     public bool ContainsNode(int i,int j)
     {
@@ -121,11 +152,7 @@ public class TrainingMazeGraph : MazeGraph
     }
 
 
-    public void AddNode(Transform transform)
-    {
-        graph.Add(localizedKeyString(transform), new GraphNode((int)transform.position.x, (int)transform.position.y, true));
-
-    }
+   
 
     public void AddNode(int i,int j)
     {
@@ -134,11 +161,7 @@ public class TrainingMazeGraph : MazeGraph
 
     }
 
-    public GraphNode GetNode(Transform transform)
-    {
-        if (!ContainsNode(transform)) return null;
-        return graph[localizedKeyString(transform)];
-    }
+   
 
     public GraphNode GetNode(int i, int j)
     {
@@ -146,43 +169,5 @@ public class TrainingMazeGraph : MazeGraph
         return graph[i+","+j];
     }
 
-    public List<GraphNode> pathFrom(Transform src, Transform dest)
-    {
-        String srcKey = (int)src.position.x + "," + (int)src.position.y;
-
-        String destKey = (int)dest.position.x + "," + (int)dest.position.y;
-
-        if (!graph.ContainsKey(srcKey) || !graph.ContainsKey(destKey))
-        {
-            return null;
-        }
-        GraphNode srcNode = graph[srcKey];
-        GraphNode destNode = graph[destKey];
-        return PathFinder.findPath(srcNode, destNode);
-    }
-
-    public float distFrom(Transform src, Transform dest)
-    {
-        List<GraphNode> path = pathFrom(src, dest);
-        return path == null ? MAX_DIST : path.Count;
-    }
-
-    public static void drawPathLines(List<GraphNode> path, Color color, float duration)
-    {
-        //draw ray from prev path to current path
-        for (int i = 1; i < path.Count; i++)
-        {
-            GraphNode curNode = path[i];
-            GraphNode prevNode = path[i - 1];
-            Vector2 curVector = new Vector2(curNode.x, curNode.y);
-            Vector2 prevVector = new Vector2(prevNode.x, prevNode.y);
-            UnityEngine.Debug.DrawLine(curVector, prevVector, color, duration, true);
-        }
-    }
-
-    //private int totalPacdotNodes()
-    //{
-
-    //}
 
 }

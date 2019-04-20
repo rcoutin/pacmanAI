@@ -8,12 +8,17 @@ using UnityEngine.SceneManagement;
 
 public class MazeGraph
 {
-    private Dictionary<String, GraphNode> graph;
+    public Dictionary<String, GraphNode> graph;
     int MAX_DIST = 9999;
-
     public MazeGraph()
     {
 
+    }
+
+    public virtual void initGraph()
+    {
+
+        System.Diagnostics.Debug.Print("Inside the parent constructor");
         graph = new Dictionary<String, GraphNode>();
 
         GameObject[] currentPacdots = GameObject.FindGameObjectsWithTag("pacdot");
@@ -64,7 +69,7 @@ public class MazeGraph
         //    System.Diagnostics.Debug.WriteLine("");
         //}
 
-                for (int i = 1; i < graph2.GetLength(0) - 1; i++)
+        for (int i = 1; i < graph2.GetLength(0) - 1; i++)
         {
             for (int j = 1; j < graph2.GetLength(1) - 1; j++)
             {
@@ -95,6 +100,8 @@ public class MazeGraph
         }
 
     }
+
+  
     private String localizedKeyString(Transform transform)
     {
         return (int)transform.position.x + "," + (int)transform.position.y;
@@ -138,7 +145,7 @@ public class MazeGraph
         return path == null ? MAX_DIST : path.Count;
     }
 
-    public static void drawPathLines(List<GraphNode> path, Color color, float duration)
+    public void drawPathLines(List<GraphNode> path, Color color, float duration)
     {
         //draw ray from prev path to current path
         for (int i = 1; i < path.Count; i++)

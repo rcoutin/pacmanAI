@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using MLAgents;
+using UnityEngine.UI;
 
 public class PlayerAcademy : Academy
 {

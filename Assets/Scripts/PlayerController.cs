@@ -53,18 +53,15 @@ public class PlayerController : Agent
        
         currentSteps = 0;
         curDestOptimal = -1;
-        destroyThis = GameObject.Find("mazeobject");
-        if (!destroyThis) destroyThis = GameObject.Find("mazeobject(Clone)");
-        Destroy(destroyThis);
-        Instantiate(mazeobject);
-        GM = GameObject.Find("Game Manager").GetComponent<GameManager>();
-        GameManager.lives = 3;
-        GameManager.Level = 1 ;
-       // GameManager.score = 0;
-        GM.OnLevelWasLoaded();
-        GM.ResetScene();
+        //destroyThis = GameObject.Find("mazeobject");
+        //if (!destroyThis) destroyThis = GameObject.Find("mazeobject(Clone)");
+        //Destroy(destroyThis);
+        //Instantiate(mazeobject);
+        //GM = GameObject.Find("Game Manager").GetComponent<GameManager>();
+        //GM.OnLevelWasLoaded();
+        //GM.ResetScene();
         ResetDestination();
-        transform.position = new Vector3(13f, 11f, 0f);
+        //transform.position = new Vector3(13f, 11f, 0f);
 
         try
         {
@@ -426,9 +423,20 @@ public class PlayerController : Agent
         return hit.collider.name == "pacdot" || (hit.collider == GetComponent<Collider2D>());
     }
 
+    bool isWallinDir(Vector2 direction)
+    {
+        // cast line from 'next to pacman' to pacman
+        // not from directly the center of next tile but just a little further from center of next tile
+        Vector2 pos = transform.position;
+        direction += new Vector2(direction.x * 0.45f, direction.y * 0.45f);
+        RaycastHit2D hit = Physics2D.Linecast(pos + direction, pos);
+        return hit.collider.name == "maze";
+    }
+
     public void ResetDestination()
     {
-        _dest = new Vector2(13f, 11f);
+        _nextDir = new Vector2();
+        _dest = new Vector2(15f, 11f);
         GetComponent<Animator>().SetFloat("DirX", 1);
         GetComponent<Animator>().SetFloat("DirY", 0);
     }
@@ -497,12 +505,11 @@ public class PlayerController : Agent
     protected void setActionMask()
     {
         List<int> mask = new List<int>();
-        mask.Add(0);
-        if (!Valid(Vector2.left)) mask.Add(1);
-        if (!Valid(Vector2.right)) mask.Add(2);
-        if (!Valid(Vector2.up)) mask.Add(3);
-        if (!Valid(Vector2.down)) mask.Add(4);
-
+        if (isWallinDir(Vector2.left)) mask.Add(1);
+        if (isWallinDir(Vector2.right)) mask.Add(2);
+        if (isWallinDir(Vector2.up)) mask.Add(3);
+        if (isWallinDir(Vector2.down)) mask.Add(4);
+        print(String.Join(" ", mask));
         if(mask.Count > 0) SetActionMask(0, mask.ToArray());
 
         //update state danger default values based on the mask
@@ -644,11 +651,11 @@ public class PlayerController : Agent
             return SCORE_POS_RW;
 
         }
-        else if (pointsGained % 100 == 0) // ate the ghosts
+        else if (pointsGained >= 100 ) // ate the ghosts
         {
             float mult = pointsGained / 100;
 
-            return mult * 0.1f;
+            return mult * 0.15f;
         }
         else if (pointsGained == 0) return SCORE_NEG_RW;
         return 0.0f;
@@ -693,13 +700,9 @@ public class PlayerController : Agent
             //    AddReward(-1.0f);
             //    Done();
             //}
-            // AddReward(-0.05f);
-            // AddReward(sr);
-            // AddReward(sr);
-            //reward to stay alive
-            //AddReward(STAY_ALIVE_RW);
-            // AddReward(distanceFromGhostReward());
-            //AddReward(distanceToPackDotReward());
+
+            AddReward(sr);
+            AddReward(STAY_ALIVE_RW);
         }
         prevScore = currentScore;
     }

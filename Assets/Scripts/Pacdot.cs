@@ -14,6 +14,7 @@ public class Pacdot : MonoBehaviour {
             if (pacdots.Length == 1)
 		    {
                 GameObject.FindObjectOfType<PlayerController>().AddReward(1.0f);
+                GameManager.Level++;
                 GameObject.FindObjectOfType<PlayerController>().Done();
                 //GameObject.FindObjectOfType<GameGUINavigation>().LoadLevel();
             }

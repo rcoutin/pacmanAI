@@ -324,24 +324,24 @@ public class PlayerController : Agent
     {
         int x = node.x;
         int y = node.y;
-        if ((x == (int)blinky.transform.position.x) && (y == (int)blinky.transform.position.y))
+        if ((x == (int)blinky?.transform.position.x) && (y == (int)blinky?.transform.position.y))
         {
-            GHOST_WT = blinky_obj.GetComponent<GhostMove>().state != GhostMove.State.Run? DANGER_WT : SCARED_WT;
+            GHOST_WT = blinky_obj?.GetComponent<GhostMove>().state != GhostMove.State.Run? DANGER_WT : SCARED_WT;
             return true;
         }
-        if ((x == (int)inky.transform.position.x) && (y == (int)inky.transform.position.y))
+        if ((x == (int)inky?.transform.position.x) && (y == (int)inky?.transform.position.y))
         {
-            GHOST_WT = inky_obj.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
+            GHOST_WT = inky_obj?.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
             return true;
         }
-        if ((x == (int)pinky.transform.position.x) && (y == (int)pinky.transform.position.y))
+        if ((x == (int)pinky?.transform.position.x) && (y == (int)pinky?.transform.position.y))
         {
-            GHOST_WT = pinky_obj.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
+            GHOST_WT = pinky_obj?.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
             return true;
         }
-        if ((x == (int)clyde.transform.position.x) && (y == (int)clyde.transform.position.y))
+        if ((x == (int)clyde?.transform.position.x) && (y == (int)clyde?.transform.position.y))
         {
-            GHOST_WT = clyde_obj.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
+            GHOST_WT = clyde_obj?.GetComponent<GhostMove>().state != GhostMove.State.Run ? DANGER_WT : SCARED_WT;
             return true;
         }
 
@@ -521,6 +521,7 @@ public class PlayerController : Agent
     protected void setActionMask()
     {
         List<int> mask = new List<int>();
+        mask.Add(0);
         if (!Valid(Vector2.left)) mask.Add(1);
         if (!Valid(Vector2.right)) mask.Add(2);
         if (!Valid(Vector2.up)) mask.Add(3);
@@ -638,7 +639,7 @@ public class PlayerController : Agent
         else if (action[0] == 1) {
             //Monitor.Log("dir", "left");
             _nextDir = Vector2.left;
-           // validateAndChangeDir();
+            // validateAndChangeDir();
             //print("Going Left");
         }
         else if (action[0] == 3)
@@ -715,11 +716,11 @@ public class PlayerController : Agent
             Monitor.Log("Score_Reward", sr);
             ///Monitor.Log("Staying Alive", 0.1f);
 
-            if (currentSteps > curDestOptimal + 10)
-            {
-                AddReward(-1.0f);
-                Done();
-            }
+            //if (currentSteps > curDestOptimal + 10)
+            //{
+            //    AddReward(-1.0f);
+            //    Done();
+            //}
             // AddReward(-0.05f);
             // AddReward(sr);
             // AddReward(sr);

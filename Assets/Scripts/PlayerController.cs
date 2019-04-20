@@ -169,7 +169,7 @@ public class PlayerController : Agent
         updateDirectionStates();
         int neighbourPos = -1;
        // Make pacman prioritize direction to closest pacdot incase there are no pacdots k nodes away
-        if (drawPathToNearestPacdot && pathToClosestPacdot != null && pathToClosestPacdot.Count > 0)
+        if (pathToClosestPacdot != null && pathToClosestPacdot.Count > 0)
         {
             
             int x = current.x;
@@ -279,7 +279,7 @@ public class PlayerController : Agent
                 }
             }
 
-            if (dirState[neighbourPos][0] > 0)
+            if (dirState[neighbourPos][0] < 0)
             {
                 colorIndex = 0; // high danger
             }

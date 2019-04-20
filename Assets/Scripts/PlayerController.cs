@@ -29,8 +29,8 @@ public class PlayerController : Agent
     GameObject inky_obj;
     GameObject blinky_obj;
 
-    private String[] dirNames = new String[] { "Left", "Right", "Up", "Down" };
-    private Vector2[] dirs = new Vector2[] { Vector2.left, Vector2.right, Vector2.up, Vector2.down };
+    private readonly String[] dirNames = new String[] { "Left", "Right", "Up", "Down" };
+    private readonly Vector2[] dirs = new Vector2[] { Vector2.left, Vector2.right, Vector2.up, Vector2.down };
     public bool debugEnabled;
     public bool drawExpandedPaths;
     public bool drawPathToNearestPacdot;
@@ -186,7 +186,6 @@ public class PlayerController : Agent
 
         // this assigns to float nearestPacdotLength and List<GraphNode> pathToNearestPacDot
 
-       // RequestDecision(); // On Demand Decisions = True
         showStateMonitors();
         if (followCalculatedPath) followpath();
 
@@ -252,7 +251,6 @@ public class PlayerController : Agent
             else if (next.y > y) neighbourPos = 2;
             else if (next.y < y) neighbourPos = 3;
             numPaths[neighbourPos]++;
-            //if (neighbourPos == -1) continue;
             //direction is valid, set default value for safety as 1
            
             for (int i=0;i<path.Count-1;i++)
@@ -358,8 +356,6 @@ public class PlayerController : Agent
         current.isPacDot = false;
         List<GraphNode> path = PathFinder.findPathToClosestPacdot(current);
         if (path == null) return;
-        //PrintLog(path.Count);
-
         if(drawPathToNearestPacdot) graph.drawPathLines(path,Color.magenta,0.3f);
         pathToClosestPacdot = path;
         nearestPacdotDistance = path.Count;
@@ -446,31 +442,12 @@ public class PlayerController : Agent
             updateOnNodeChange(); 
             RequestDecision();
         }
-        //if (Vector2.Distance(_dest, transform.position) == 0f)
-        //{
-
-        //}
         validateAndChangeDir();
         Vector2 p = Vector2.MoveTowards(transform.position, _dest, speed);
         GetComponent<Rigidbody2D>().MovePosition(p);
 
-        // get the next direction from keyboard
-        //agentMove()
-        // if pacman is in the center of a tile
-
-
     }
 
-    bool IsColliderNearby(Vector2 direction)
-    {
-        // cast line from 'next to pacman' to pacman
-        // not from directly the center of next tile but just a little further from center of next tile
-        Vector2 pos = transform.position;
-        direction += new Vector2(direction.x * 0.45f, direction.y * 0.45f);
-        RaycastHit2D hit = Physics2D.Linecast(pos + direction, pos);
-        //UnityEngine.Debug.DrawRay(transform.position, direction * 5, color, 1000000, false);
-        return hit.collider.name == "maze";
-    }
 
     void PrintLog(System.Object s)
     {
@@ -515,7 +492,6 @@ public class PlayerController : Agent
 
         Instantiate(points.pointSprites[killstreak - 1], transform.position, Quaternion.identity);
         GameManager.score += (int)Mathf.Pow(2, killstreak) * 100;
-
     }
 
     protected void setActionMask()
@@ -544,21 +520,10 @@ public class PlayerController : Agent
     public override void CollectObservations()
     {
         setActionMask();
-        //Monitor.Log("danger_left", currentState[0][0]);
-        //Monitor.Log("danger_right", currentState[1][0]);
-        //Monitor.Log("danger_up", currentState[2][0]);
-        //Monitor.Log("danger_down", currentState[3][0]);
-        //Monitor.Log("food_left", currentState[0][1]);
-        //Monitor.Log("food_right", currentState[1][1]);
-        //Monitor.Log("food_up", currentState[2][1]);
-        //Monitor.Log("food_down", currentState[3][1]);
-
+       
         if (currentState != null)
         {
-            //AddVectorObs(currentState[0][0] + PACDOT_WT * currentState[0][1] + POWERUP_WT * currentState[0][2]);
-            //AddVectorObs(currentState[1][0] + PACDOT_WT * currentState[1][1] + POWERUP_WT * currentState[1][2]);
-            //AddVectorObs(currentState[2][0] + PACDOT_WT * currentState[2][1] + POWERUP_WT * currentState[2][2]);
-            //AddVectorObs(currentState[3][0] + PACDOT_WT * currentState[3][1] + POWERUP_WT * currentState[3][2]);
+            
             AddVectorObs(currentState[0]);
             AddVectorObs(currentState[1]);
             AddVectorObs(currentState[2]);
@@ -572,15 +537,11 @@ public class PlayerController : Agent
             AddVectorObs(new float[] { 0, 0, 0 }); 
             AddVectorObs(new float[] { 0, 0, 0 });
 
-            //AddVectorObs(0);
-            //AddVectorObs(0);
-            //AddVectorObs(0);
-            //AddVectorObs(0);
+        
         }
         AddVectorObs(pathToClosestPacdot == null ? 0 : pathToClosestPacdot.Count);
-        //AddVectorObs(pathToClosestPacdot == null ? 0 : pathToClosestPacdot.Count);
-        //AddVectorObs(_dir);
-        //AddVectorObs(blinkyDistance);
+        AddVectorObs(GameManager.scared);
+       
 
     }
 
@@ -624,12 +585,7 @@ public class PlayerController : Agent
 
     public void agentMove(float[] action)
     {
-        //if(action[0]!=0 && action[1] != 0)
-        //{
-        //    print(action[0] + "-" + action[1]);
-
-        //}
-        //print(action[0]);
+       
         if (action[0] == 2) {
             //Monitor.Log("dir", "right");
             _nextDir = Vector2.right;
@@ -677,10 +633,26 @@ public class PlayerController : Agent
 
     }
 
-    private float scoreReward(float curScore,float prevScore)
+    private float scoreReward(float curScore, float prevScore)
     {
-        if (curScore - prevScore > 0) return SCORE_POS_RW;
-        return SCORE_NEG_RW;
+
+        float pointsGained = curScore - prevScore;
+
+        if (pointsGained == 10) // taken pacdot
+        {
+
+            return SCORE_POS_RW;
+
+        }
+        else if (pointsGained % 100 == 0) // ate the ghosts
+        {
+            float mult = pointsGained / 100;
+
+            return mult * 0.1f;
+        }
+        else if (pointsGained == 0) return SCORE_NEG_RW;
+        return 0.0f;
+
     }
     private float distanceFromGhostReward()
     {

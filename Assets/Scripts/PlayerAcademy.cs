@@ -83,6 +83,8 @@ public class PlayerAcademy : Academy
             GameManager.score = 0;
             GM.OnLevelWasLoaded();
             GM.ResetScene();
+            GameObject.FindObjectOfType<PlayerController>().graph.initGraph();
+
             //Application.LoadLevel("game");
         }
 

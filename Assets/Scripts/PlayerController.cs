@@ -61,11 +61,12 @@ public class PlayerController : Agent
         //GM.OnLevelWasLoaded();
         //GM.ResetScene();
         ResetDestination();
+        ResetDirectionStates();
         //transform.position = new Vector3(13f, 11f, 0f);
 
         try
         {
-            graph.initGraph();
+           // graph.initGraph();
 
         }
         catch (Exception e)
@@ -73,6 +74,14 @@ public class PlayerController : Agent
             System.Diagnostics.Debug.Print(e.Message);
             System.Diagnostics.Debug.Print(e.StackTrace);
         }
+    }
+
+    private void ResetDirectionStates()
+    {
+        AddVectorObs(new float[] { 0, 0, 0 });
+        AddVectorObs(new float[] { 0, 0, 0 });
+        AddVectorObs(new float[] { 0, 0, 0 });
+        AddVectorObs(new float[] { 0, 0, 0 });
     }
 
     public int prevScore;

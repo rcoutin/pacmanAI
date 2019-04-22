@@ -11,7 +11,7 @@ public class Pacdot : MonoBehaviour {
 		    GameObject[] pacdots = GameObject.FindGameObjectsWithTag("pacdot");
             Destroy(gameObject);
             
-            if (pacdots.Length == 1)
+            if (pacdots.Length == 0)
 		    {
                 GameObject.FindObjectOfType<PlayerController>().AddReward(1.0f);
                 GameManager.Level++;

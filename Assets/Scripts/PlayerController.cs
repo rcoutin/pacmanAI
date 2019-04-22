@@ -14,7 +14,6 @@ public class PlayerController : Agent
     public float STAY_ALIVE_RW = 0.1f;
     public float SCORE_POS_RW = 0.25f;
     public float SCORE_NEG_RW = -0.01f;
-    private float chaseTimer = 0.0f;
     public float PACDOT_DIR_SCORE = 0.1f;
     public float DANGER_MULT = 0.1f;
     public float POWERUP_DIR_SCORE = 0.1f;
@@ -22,8 +21,9 @@ public class PlayerController : Agent
     public float SCARED_WT = 2;
     public float PACDOT_WT = 2;
     public float POWERUP_WT = 4;
-    public int PATH_SIZE = 10;
     public float GHOST_WT = -4;
+    public float SAFE_PATH_COEFF;
+    public int PATH_SIZE = 10;
     GameObject clyde_obj;
     GameObject pinky_obj;
     GameObject inky_obj;
@@ -51,8 +51,7 @@ public class PlayerController : Agent
     public void agent_done()
     {
        
-        currentSteps = 0;
-        curDestOptimal = -1;
+       
         //destroyThis = GameObject.Find("mazeobject");
         //if (!destroyThis) destroyThis = GameObject.Find("mazeobject(Clone)");
         //Destroy(destroyThis);
@@ -60,8 +59,8 @@ public class PlayerController : Agent
         //GM = GameObject.Find("Game Manager").GetComponent<GameManager>();
         //GM.OnLevelWasLoaded();
         //GM.ResetScene();
-        ResetDestination();
-        ResetDirectionStates();
+        //ResetDestination();
+        //ResetDirectionStates();
         //transform.position = new Vector3(13f, 11f, 0f);
 
         try
@@ -118,6 +117,8 @@ public class PlayerController : Agent
     private ScoreManager SM;
 
     private bool _deadPlaying = false;
+
+
     // Use this for initialization
     void Start()
     {
@@ -236,7 +237,7 @@ public class PlayerController : Agent
         //initialize
         for (int i = 0; i < 4; i++)
         {
-            dirState.Add(i,new float[] { 0, 0, 0 });
+            dirState.Add(i,new float[] { SAFE_PATH_COEFF, 0, 0 });
         }
         GraphNode current = graph.GetNode(transform);
       
@@ -258,31 +259,39 @@ public class PlayerController : Agent
             else if (next.y < y) neighbourPos = 3;
             numPaths[neighbourPos]++;
             //direction is valid, set default value for safety as 1
-           
+            bool foundGhostInPath = false;
             for (int i=0;i<path.Count-1;i++)
-            {
-                float danger = 0;
-                if (isGhost(path[i]))
+            {           
+                GhostMove pathGhost = isGhostAtGraphNode(path[i]);
+                if (pathGhost != null) // there's a ghost in the path
                 {
-                    float cur = i*(i/2);
-                    danger = (cur*DANGER_MULT);
-                    //float existingDanger = dirState[neighbourPos][0];
-                    //if (danger > existingDanger)
-                    //{
-                    //    dirState[neighbourPos][0] = danger;
-                    //}
-                    dirState[neighbourPos][0] += GHOST_WT * danger;
+                    float cur = i * (i);
+                    float ghostDistScore = (cur * DANGER_MULT);
+                    bool isGhostScared = pathGhost.state == GhostMove.State.Run;
+                    float ghostMult = isGhostScared ? SCARED_WT : DANGER_WT;
+                    dirState[neighbourPos][0] += ghostMult * ghostDistScore;
+                    foundGhostInPath = true;
                 }
-                //dirState[neighbourPos][0] = ((numPaths[neighbourPos] - 1) * dirState[neighbourPos][0] + danger) / numPaths[neighbourPos];
+
+
+                //if (isGhost(path[i]))
+                //{
+                //    float cur = i*(i);
+                //    danger = (cur * DANGER_MULT);
+                //    dirState[neighbourPos][0] += GHOST_WT * danger;
+                //    ghostInPath = true;
+                //}
                 if (path[i].isPacDot)
                 {
-                    //dirState[neighbourPos][1] =Math.Min(1,PACDOT_DIR_SCORE+ dirState[neighbourPos][1]);
                     dirState[neighbourPos][1] +=  (i * PACDOT_DIR_SCORE) / path.Count;
                 }
                 if (path[i].isPowerUp)
                 {
                     dirState[neighbourPos][2] += i* POWERUP_DIR_SCORE;
                 }
+            }
+            if (!foundGhostInPath) {
+                dirState[neighbourPos][0] += SAFE_PATH_COEFF;
             }
 
             if (dirState[neighbourPos][0] < 0)
@@ -311,7 +320,7 @@ public class PlayerController : Agent
         {
             if (numPaths[i] != 0)
             {
-                //dirState[i][0] /= numPaths[i];
+                dirState[i][0] /= numPaths[i];
                 dirState[i][1] /= numPaths[i];
                 //dirState[i][2] /= numPaths[i];
 
@@ -322,7 +331,29 @@ public class PlayerController : Agent
     }
 
 
+    private GhostMove isGhostAtGraphNode(GraphNode node)
+    {
+        int x = node.x;
+        int y = node.y;
+        if ((x == (int)blinky?.transform.position.x) && (y == (int)blinky?.transform.position.y))
+        {
 
+            return blinky_obj.GetComponent<GhostMove>();
+        }
+        if ((x == (int)inky?.transform.position.x) && (y == (int)inky?.transform.position.y))
+        {
+            return inky_obj.GetComponent<GhostMove>();
+        }
+        if ((x == (int)pinky?.transform.position.x) && (y == (int)pinky?.transform.position.y))
+        {
+            return pinky_obj.GetComponent<GhostMove>();
+        }
+        if ((x == (int)clyde?.transform.position.x) && (y == (int)clyde?.transform.position.y))
+        {
+            return clyde_obj.GetComponent<GhostMove>();
+        }
+        return null;
+    }
 
     private bool isGhost(GraphNode node)
     {
@@ -388,7 +419,7 @@ public class PlayerController : Agent
 
             }
         }
-        _nextDir = dirs[direction];
+        if(direction >= 0)_nextDir = dirs[direction];
 
     }
 
@@ -514,24 +545,42 @@ public class PlayerController : Agent
     protected void setActionMask()
     {
         List<int> mask = new List<int>();
-        if (isWallinDir(Vector2.left)) mask.Add(1);
-        if (isWallinDir(Vector2.right)) mask.Add(2);
-        if (isWallinDir(Vector2.up)) mask.Add(3);
-        if (isWallinDir(Vector2.down)) mask.Add(4);
-        print(String.Join(" ", mask));
+        Boolean leftWall = isWallinDir(Vector2.left);
+        Boolean rightWall = isWallinDir(Vector2.right);
+        Boolean upWall = isWallinDir(Vector2.up);
+        Boolean downWall = isWallinDir(Vector2.down);
+
+        if (leftWall) mask.Add(1);
+        if (rightWall) mask.Add(2);
+        if (upWall) mask.Add(3);
+        if (downWall) mask.Add(4);
+        //print(String.Join(" ", mask));
         if(mask.Count > 0) SetActionMask(0, mask.ToArray());
 
         //update state danger default values based on the mask
 
-        //if (currentState != null)
-        //{
-        //    if (cantGoLeft) currentState[0][0] = 1;
-        //    if (cantGoRight) currentState[1][0] = 1;
-        //    if (cantGoUp) currentState[2][0] = 1;
-        //    if (cantGoDown) currentState[3][0] = 1;
-        //}
+        if (currentState != null)
+        {
+            if (leftWall) currentState[0][0] = -2;
+            if (rightWall) currentState[1][0] = -2;
+            if (upWall) currentState[2][0] = -2;
+            if (downWall) currentState[3][0] = -2;
+        }
 
     }
+
+    public void printStates()
+    {
+        if (currentState != null)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                print(dirNames[i] + " " + String.Join(" ", currentState[i]));
+            }
+        }
+       
+    }
+
 
     public override void CollectObservations()
     {
@@ -547,17 +596,20 @@ public class PlayerController : Agent
         }
         else
         {
-            //default values
-            AddVectorObs(new float[] { 0, 0, 0 });
-            AddVectorObs(new float[] { 0, 0, 0 });
-            AddVectorObs(new float[] { 0, 0, 0 }); 
-            AddVectorObs(new float[] { 0, 0, 0 });
+           // default values
+            AddVectorObs(new float[] { SAFE_PATH_COEFF, 0, 0 });
+            AddVectorObs(new float[] { SAFE_PATH_COEFF, 0, 0 });
+            AddVectorObs(new float[] { SAFE_PATH_COEFF, 0, 0 });
+            AddVectorObs(new float[] { SAFE_PATH_COEFF, 0, 0 });
 
-        
+
         }
+
+
+
         AddVectorObs(pathToClosestPacdot == null ? 0 : pathToClosestPacdot.Count);
-        AddVectorObs(GameManager.scared);
-       
+        //AddVectorObs(GameManager.scared);
+        printStates();
 
     }
 
@@ -569,25 +621,17 @@ public class PlayerController : Agent
     public override void AgentReset()
     {
 
-        agent_done();
-
-
+        currentSteps = 0;
+        curDestOptimal = -1;
+        ResetDestination();
+        ResetDirectionStates();
         print("Agent reset is called");
-        //UnityEngine.Debug.Log("Sup4");
-        //GM.ResetScene();
-        //Start();
-        //GameManager.gameState = GameManager.GameState.Game;
-        //GameGUINavigation gui = GameObject.FindObjectOfType<GameGUINavigation>();
-        //gui.H_ShowReadyScreen();
-
-        //System.Diagnostics.Debug.WriteLine("Agent Reset");
     }
 
     public override void AgentOnDone()
     {
-        //System.Diagnostics.Debug.WriteLine("Agent Done");
-        base.AgentOnDone();
-
+        //Resets on done by configuration
+       
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -601,7 +645,7 @@ public class PlayerController : Agent
 
     public void agentMove(float[] action)
     {
-       
+        
         if (action[0] == 2) {
             //Monitor.Log("dir", "right");
             _nextDir = Vector2.right;

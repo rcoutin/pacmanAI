@@ -13,6 +13,7 @@ public class PlayerAcademy : Academy
     public GameObject mazeobject;
     private bool saved = false;
     public GameObject destroyThis;
+    public Image[] livesImage;
     // Start is called before the first frame update
     void Start()
     {
@@ -62,14 +63,18 @@ public class PlayerAcademy : Academy
 
     public override void InitializeAcademy()
     {
+        UIScript ui = GameObject.FindObjectOfType<UIScript>();
+        livesImage =(Image[]) ui.lives.ToArray().Clone();
+        
         Monitor.SetActive(true);
         System.Diagnostics.Debug.WriteLine("Academy Initialized()");
     }
 
     public override void AcademyStep()
     {
+        GameObject[] pacdots = GameObject.FindGameObjectsWithTag("pacdot");
         //System.Diagnostics.Debug.WriteLine("AcademyStep");
-        if (GameManager.lives <= 0)
+        if (GameManager.lives <= 0 || pacdots.Length == 0)
         {
             //System.Diagnostics.Debug.WriteLine("AcademyStep Done");
             Done();
@@ -79,11 +84,19 @@ public class PlayerAcademy : Academy
             Instantiate(mazeobject);
             GM = GameObject.Find("Game Manager").GetComponent<GameManager>();
             GameManager.lives = 3;
-            GameManager.Level = 0;
+            GameManager.Level = pacdots.Length == 0 ? GameManager.Level + 1 : 0;
             GameManager.score = 0;
             GM.OnLevelWasLoaded();
             GM.ResetScene();
+            UIScript ui = GameObject.FindObjectOfType<UIScript>();
+            for(int i = 0;i < 3; i++)
+            {
+                ui.lives.Add(livesImage[i]);
+            }
+            
+           
             GameObject.FindObjectOfType<PlayerController>().graph.initGraph();
+            GameObject.FindObjectOfType<PlayerController>().prevScore = 0;
 
             //Application.LoadLevel("game");
         }

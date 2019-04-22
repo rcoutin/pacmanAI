@@ -11,19 +11,19 @@ public class PlayerController : Agent
 
     private int currentSteps = 0;
     private int curDestOptimal = -1;
-    public float STAY_ALIVE_RW = 0.1f;
-    public float SCORE_POS_RW = 0.25f;
-    public float SCORE_NEG_RW = -0.01f;
-    public float PACDOT_DIR_SCORE = 0.1f;
-    public float DANGER_MULT = 0.1f;
-    public float POWERUP_DIR_SCORE = 0.1f;
-    public float DANGER_WT = -4;
-    public float SCARED_WT = 2;
-    public float PACDOT_WT = 2;
-    public float POWERUP_WT = 4;
-    public float GHOST_WT = -4;
+    public float STAY_ALIVE_RW;
+    public float SCORE_POS_RW;
+    public float SCORE_NEG_RW ;
+    public float PACDOT_DIR_SCORE ;
+    public float DANGER_MULT ;
+    public float POWERUP_DIR_SCORE;
+    public float DANGER_WT ;
+    public float SCARED_WT ;
+    public float PACDOT_WT ;
+    public float POWERUP_WT;
+    public float GHOST_WT ;
     public float SAFE_PATH_COEFF;
-    public int PATH_SIZE = 10;
+    public int PATH_SIZE;
     GameObject clyde_obj;
     GameObject pinky_obj;
     GameObject inky_obj;
@@ -706,9 +706,9 @@ public class PlayerController : Agent
         }
         else if (pointsGained >= 100 ) // ate the ghosts
         {
-            float mult = pointsGained / 100;
-
-            return mult * 0.15f;
+            //float mult = pointsGained / 100;
+            return 0.5f;
+            //return mult * 0.15f;
         }
         else if (pointsGained == 0) return SCORE_NEG_RW;
         return 0.0f;
